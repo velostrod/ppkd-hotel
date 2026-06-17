@@ -6,7 +6,7 @@
 <div class="space-y-6 max-w-6xl mx-auto">
     <!-- Date Filter Card -->
     <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <form method="GET" class="flex flex-col md:flex-row items-end gap-4">
+        <form method="GET" class="filter-form">
             <div>
                 <label for="start_date" class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal Awal</label>
                 <input type="date" id="start_date" name="start_date" value="{{ $start }}" class="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-amber-500 bg-white" />

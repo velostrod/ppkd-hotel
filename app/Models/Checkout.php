@@ -23,6 +23,7 @@ class Checkout extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
 
     public function frontOffice(): BelongsTo
     {
