@@ -86,4 +86,37 @@ class DashboardRoomBoardTest extends TestCase
         $response->assertDontSee('Breakfast Included');
         $response->assertDontSee('Extra Bed Tersedia');
     }
+
+    public function test_admin_dashboard_passes_rooms_to_view(): void
+    {
+        $roomType = RoomType::create([
+            'name' => 'Test Admin Type',
+            'description' => 'Test type for admin',
+            'base_price' => 750000.00,
+            'capacity' => 3,
+            'breakfast_included' => false,
+            'breakfast_price' => 0.00,
+            'extra_bed_allowed' => true,
+            'extra_bed_price' => 0.00,
+            'is_active' => true,
+        ]);
+
+        Room::create([
+            'room_number' => '901',
+            'room_type_id' => $roomType->id,
+            'floor' => 9,
+            'status' => 'available',
+        ]);
+
+        $admin = User::whereHas('role', function ($q) {
+            $q->where('name', 'admin');
+        })->first();
+
+        $response = $this->actingAs($admin)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertViewHas('rooms');
+        $response->assertSee('750.000');
+        $response->assertSee('Extra Bed Tersedia');
+    }
 }
