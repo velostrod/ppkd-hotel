@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
     <div class="border-b border-slate-100 pb-4 mb-8">
-        <h3 class="text-base font-bold text-slate-800">Pengaturan Umum Hotel Kejora</h3>
+        <h3 class="text-base font-bold text-slate-800">Pengaturan Umum PPKD Hotel</h3>
         <p class="text-xs text-slate-400 mt-1">Konfigurasi dasar aplikasi hotel, tarif pajak, biaya service, dan penamaan booking/invoice.</p>
     </div>
 
@@ -71,6 +71,19 @@
             <div class="md:col-span-2">
                 <label for="address" class="block text-sm font-semibold text-slate-700 mb-1.5">Alamat Lengkap Hotel</label>
                 <textarea id="address" name="address" rows="3" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-amber-500">{{ old('address', $settings->address) }}</textarea>
+            </div>
+
+            <!-- Check-in / Check-out Time -->
+            <div>
+                <label for="checkin_time" class="block text-sm font-semibold text-slate-700 mb-1.5">Jam Check-In</label>
+                <input type="time" id="checkin_time" name="checkin_time" value="{{ old('checkin_time', $settings->checkin_time ?? '14:00') }}" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-amber-500" />
+                <p class="text-xs text-slate-400 mt-1">Batas awal tamu dapat check-in</p>
+            </div>
+
+            <div>
+                <label for="checkout_time" class="block text-sm font-semibold text-slate-700 mb-1.5">Jam Check-Out</label>
+                <input type="time" id="checkout_time" name="checkout_time" value="{{ old('checkout_time', $settings->checkout_time ?? '12:00') }}" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-amber-500" />
+                <p class="text-xs text-slate-400 mt-1">Batas akhir tamu harus checkout. Lewat jam ini = early checkout terdeteksi jika tanggal belum checkout</p>
             </div>
         </div>
 

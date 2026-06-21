@@ -3,12 +3,12 @@
 @section('header-title', 'Papan Pengelolaan Tugas Housekeeping')
 
 @section('content')
-<div class="space-y-10 max-w-7xl mx-auto">
+<div class="space-y-4 md:space-y-10 max-w-7xl mx-auto">
     <!-- Tasks split -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
         <!-- Cleaning & Maintenance Tickets (Left 7 Cols) -->
-        <div class="lg:col-span-7 space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+        <div class="lg:col-span-7 space-y-4 md:space-y-6">
+            <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 md:space-y-6">
                 <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Antrean Tugas Cleaning / Perbaikan</h3>
                 
                 <div class="space-y-4">
@@ -65,7 +65,7 @@
                                 @elseif($req->status === 'in_progress')
                                     <form action="{{ route('housekeeping.complete', $req->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm">
+                                        <button type="submit" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm">
                                             Selesai
                                         </button>
                                     </form>
@@ -80,9 +80,9 @@
         </div>
 
         <!-- Room Inspections & Laundry Queue (Right 5 Cols) -->
-        <div class="lg:col-span-5 space-y-6">
+        <div class="lg:col-span-5 space-y-4 md:space-y-6">
             <!-- Room Inspections Queue -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+            <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 md:space-y-6">
                 <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Antrean Inspeksi Kamar (Checkout)</h3>
                 <div class="space-y-4">
                     @forelse($pendingInspections as $ins)
@@ -103,7 +103,7 @@
             </div>
 
             <!-- Laundry requests HK queue -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+            <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 md:space-y-6">
                 <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Pekerjaan Laundry Tamu</h3>
                 <div class="space-y-4">
                     @forelse($pendingLaundry as $laun)
@@ -139,7 +139,7 @@
                                     <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg uppercase">Selesai Cuci (Ready)</button>
                                 @elseif($laun->status === 'ready')
                                     <input type="hidden" name="status" value="delivered" />
-                                    <button type="submit" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-lg uppercase">Antar Ke Tamu</button>
+                                    <button type="submit" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg uppercase">Antar Ke Tamu</button>
                                 @endif
                             </form>
                         </div>
@@ -152,15 +152,28 @@
     </div>
 
     <!-- Manual Room Status Update Grid -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+    <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 md:space-y-6">
         <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Update Cepat Status Kamar</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             @foreach($rooms as $room)
                 <div class="border border-slate-100 p-4 rounded-xl bg-slate-50/50 flex flex-col justify-between gap-3">
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-slate-800 text-sm">#{{ $room->room_number }}</span>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-700">
-                            {{ $room->status }}
+                        @php
+                            $badgeColor = 'bg-slate-100 text-slate-700 border border-slate-200';
+                            switch($room->status) {
+                                case 'available': $badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-200'; break;
+                                case 'reserved': $badgeColor = 'bg-blue-50 text-blue-700 border border-blue-200'; break;
+                                case 'occupied': $badgeColor = 'bg-amber-50 text-amber-700 border border-amber-200'; break;
+                                case 'dirty': $badgeColor = 'bg-rose-50 text-rose-700 border border-rose-200'; break;
+                                case 'cleaning': $badgeColor = 'bg-cyan-50 text-cyan-700 border border-cyan-200'; break;
+                                case 'inspected': $badgeColor = 'bg-indigo-50 text-indigo-700 border border-indigo-200'; break;
+                                case 'maintenance': $badgeColor = 'bg-orange-50 text-orange-700 border border-orange-200'; break;
+                                case 'out_of_order': $badgeColor = 'bg-red-50 text-red-700 border border-red-200'; break;
+                            }
+                        @endphp
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $badgeColor }}">
+                            {{ str_replace('_', ' ', $room->status) }}
                         </span>
                     </div>
                     <form action="{{ route('housekeeping.room-status', $room->id) }}" method="POST" class="space-y-2">
@@ -168,6 +181,8 @@
                         <select name="status" onchange="this.form.submit()" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-amber-500 bg-white">
                             <option value="">Ubah Status...</option>
                             <option value="available" {{ $room->status === 'available' ? 'selected' : '' }}>Available</option>
+                            <option value="reserved" {{ $room->status === 'reserved' ? 'selected' : '' }}>Reserved</option>
+                            <option value="occupied" {{ $room->status === 'occupied' ? 'selected' : '' }}>Occupied</option>
                             <option value="dirty" {{ $room->status === 'dirty' ? 'selected' : '' }}>Dirty</option>
                             <option value="cleaning" {{ $room->status === 'cleaning' ? 'selected' : '' }}>Cleaning</option>
                             <option value="inspected" {{ $room->status === 'inspected' ? 'selected' : '' }}>Inspected</option>

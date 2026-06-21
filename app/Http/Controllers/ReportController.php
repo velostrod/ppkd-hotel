@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FnbOrderStatus;
+use App\Enums\ReservationStatus;
+use App\Enums\RoomStatus;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomType;
@@ -11,13 +14,18 @@ use App\Models\LaundryRequest;
 use App\Models\Charge;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    private function getDates(Request $request)
+    public function __construct(
+        private readonly BillingService $billingService,
+    ) {}
+
+    private function getDates(Request $request): array
     {
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d'));
@@ -27,13 +35,17 @@ class ReportController extends Controller
     public function reservations(Request $request)
     {
         [$start, $end] = $this->getDates($request);
-        
+        $roomTypeId = $request->input('room_type_id');
+
         $reservations = Reservation::with(['guest', 'room.roomType', 'invoice'])
             ->whereBetween('checkin_date', [$start, $end])
+            ->when($roomTypeId, fn($q) => $q->whereHas('room', fn($r) => $r->where('room_type_id', $roomTypeId)))
             ->orderBy('checkin_date', 'asc')
             ->get();
 
-        return view('reports.reservations', compact('reservations', 'start', 'end'));
+        $roomTypes = RoomType::orderBy('name')->get();
+
+        return view('reports.reservations', compact('reservations', 'roomTypes', 'roomTypeId', 'start', 'end'));
     }
 
     public function occupancy(Request $request)
@@ -47,65 +59,50 @@ class ReportController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        // Standardize keys
-        $statuses = ['available', 'reserved', 'occupied', 'dirty', 'cleaning', 'inspected', 'maintenance', 'out_of_order'];
+        // Standardize keys using RoomStatus enum
         $roomStatuses = [];
-        foreach ($statuses as $st) {
-            $roomStatuses[$st] = $statusCounts[$st] ?? 0;
+        foreach (RoomStatus::cases() as $status) {
+            $roomStatuses[$status->value] = $statusCounts[$status->value] ?? 0;
         }
 
-        // Calculate occupancy rate over the selected period
-        // Occupancy Rate = (Occupied Room Nights / Total Room Nights) * 100
-        $totalDays = Carbon::parse($start)->diffInDays(Carbon::parse($end)) + 1;
-        $totalRoomNights = $roomsCount * $totalDays;
-
-        $occupiedRoomNights = 0;
-        
-        // Find reservations that were active in the period
-        $activeReservations = Reservation::where('status', '!=', 'cancelled')
-            ->where('checkin_date', '<=', $end)
-            ->where('checkout_date', '>=', $start)
+        // Top room types by booking count in period
+        $topRoomTypes = RoomType::select('room_types.id', 'room_types.name', DB::raw('count(reservations.id) as booking_count'))
+            ->join('rooms', 'rooms.room_type_id', '=', 'room_types.id')
+            ->join('reservations', 'reservations.room_id', '=', 'rooms.id')
+            ->whereBetween('reservations.checkin_date', [$start, $end])
+            ->where('reservations.status', '!=', ReservationStatus::Cancelled->value)
+            ->groupBy('room_types.id', 'room_types.name')
+            ->orderByDesc('booking_count')
             ->get();
 
-        foreach ($activeReservations as $res) {
-            $resStart = Carbon::parse(max($res->checkin_date->format('Y-m-d'), $start));
-            $resEnd = Carbon::parse(min($res->checkout_date->format('Y-m-d'), $end));
-            $nights = $resStart->diffInDays($resEnd);
-            $occupiedRoomNights += max(0, $nights);
-        }
+        // Calculate occupancy rate using BillingService
+        $occupancy = $this->billingService->calculateOccupancyRate($start, $end, $roomsCount);
 
-        $occupancyRate = $totalRoomNights > 0 ? round(($occupiedRoomNights / $totalRoomNights) * 100, 2) : 0;
-
-        return view('reports.occupancy', compact('roomStatuses', 'roomsCount', 'occupancyRate', 'occupiedRoomNights', 'totalRoomNights', 'start', 'end'));
+        return view('reports.occupancy', compact(
+            'roomStatuses', 'roomsCount', 'topRoomTypes', 'start', 'end'
+        ))->with($occupancy);
     }
 
     public function fnb(Request $request)
     {
         [$start, $end] = $this->getDates($request);
+        $startOfDay = Carbon::parse($start)->startOfDay();
+        $endOfDay = Carbon::parse($end)->endOfDay();
 
         $orders = FnbOrder::with(['reservation.room', 'guest', 'items.foodItem'])
-            ->whereBetween('order_time', [
-                Carbon::parse($start)->startOfDay(), 
-                Carbon::parse($end)->endOfDay()
-            ])
+            ->whereBetween('order_time', [$startOfDay, $endOfDay])
             ->orderBy('order_time', 'desc')
             ->get();
 
-        $totalRevenue = FnbOrder::where('status', 'delivered')
-            ->whereBetween('order_time', [
-                Carbon::parse($start)->startOfDay(), 
-                Carbon::parse($end)->endOfDay()
-            ])
+        $totalRevenue = FnbOrder::where('status', FnbOrderStatus::Delivered->value)
+            ->whereBetween('order_time', [$startOfDay, $endOfDay])
             ->sum('total_price');
 
-        // Top menu items count
+        // Top menu items
         $topItems = FnbOrderItem::select('food_item_id', DB::raw('sum(qty) as total_qty'))
-            ->whereHas('fnbOrder', function($q) use ($start, $end) {
-                $q->where('status', 'delivered')
-                  ->whereBetween('order_time', [
-                      Carbon::parse($start)->startOfDay(), 
-                      Carbon::parse($end)->endOfDay()
-                  ]);
+            ->whereHas('fnbOrder', function($q) use ($startOfDay, $endOfDay) {
+                $q->where('status', FnbOrderStatus::Delivered->value)
+                  ->whereBetween('order_time', [$startOfDay, $endOfDay]);
             })
             ->with('foodItem')
             ->groupBy('food_item_id')
@@ -120,13 +117,11 @@ class ReportController extends Controller
     {
         [$start, $end] = $this->getDates($request);
 
-        // Revenue source query
-        // Query checkouts completed in the period to represent finalized billing
         $invoices = Invoice::whereHas('reservation', function($q) use ($start, $end) {
                 $q->whereBetween('checkout_date', [$start, $end])
-                  ->where('status', 'checked_out');
+                  ->where('status', ReservationStatus::CheckedOut->value);
             })
-            ->with('reservation.room.roomType')
+            ->with(['reservation.room.roomType', 'reservation.details', 'reservation.charges.chargeType'])
             ->get();
 
         $totalRevenue = 0;
@@ -139,28 +134,28 @@ class ReportController extends Controller
         foreach ($invoices as $inv) {
             $totalRevenue += $inv->total_amount;
             
-            // Calculate base room charge from details
             $res = $inv->reservation;
-            $nights = $res->checkin_date->diffInDays($res->checkout_date);
-            $nights = $nights > 0 ? $nights : 1;
-            
+            $nights = $res->nights; // Using the new accessor
+
             $roomRevenue += $res->room->roomType->base_price * $nights;
 
-            // Extra bed from reservation details
-            $extraBedRevenue += $res->details()->where('type', 'extra_bed')->sum(DB::raw('qty * price'));
+            // Extra bed from eagerly loaded details
+            $extraBedDetail = $res->details->firstWhere('type', 'extra_bed');
+            if ($extraBedDetail) {
+                $extraBedRevenue += $extraBedDetail->qty * $extraBedDetail->price;
+            }
 
-            // Other charges breakdown
-            $laundryRevenue += $res->charges()->whereHas('chargeType', function($q) {
-                $q->where('code', 'laundry');
-            })->sum('amount');
-
-            $fnbRevenue += $res->charges()->whereHas('chargeType', function($q) {
-                $q->where('code', 'fnb');
-            })->sum('amount');
-
-            $damageRevenue += $res->charges()->whereHas('chargeType', function($q) {
-                $q->where('code', 'damage');
-            })->sum('amount');
+            // Charges breakdown from eagerly loaded charges
+            foreach ($res->charges as $charge) {
+                if ($charge->chargeType) {
+                    match ($charge->chargeType->code) {
+                        'laundry' => $laundryRevenue += $charge->amount,
+                        'fnb'     => $fnbRevenue += $charge->amount,
+                        'damage'  => $damageRevenue += $charge->amount,
+                        default   => null,
+                    };
+                }
+            }
         }
 
         // Room Type Revenue breakdown
@@ -170,11 +165,7 @@ class ReportController extends Controller
             $typeRev = 0;
             foreach ($invoices as $inv) {
                 if ($inv->reservation->room->roomType->id === $type->id) {
-                    // Approximate room portion
-                    $res = $inv->reservation;
-                    $nights = $res->checkin_date->diffInDays($res->checkout_date);
-                    $nights = $nights > 0 ? $nights : 1;
-                    $typeRev += $type->base_price * $nights;
+                    $typeRev += $type->base_price * $inv->reservation->nights;
                 }
             }
             $roomTypeRevenue[$type->name] = $typeRev;
@@ -186,73 +177,47 @@ class ReportController extends Controller
     public function summary(Request $request)
     {
         [$start, $end] = $this->getDates($request);
+        $startOfDay = Carbon::parse($start)->startOfDay();
+        $endOfDay = Carbon::parse($end)->endOfDay();
 
         $reservationsCount = Reservation::whereBetween('checkin_date', [$start, $end])->count();
 
-        $checkinsCount = Reservation::where('status', 'checked_in')
+        $checkinsCount = Reservation::checkedIn()
             ->whereBetween('checkin_date', [$start, $end])
             ->count();
 
-        $checkoutsCount = Reservation::where('status', 'checked_out')
+        $checkoutsCount = Reservation::where('status', ReservationStatus::CheckedOut->value)
             ->whereBetween('checkin_date', [$start, $end])
             ->count();
 
-        $cancelledCount = Reservation::where('status', 'cancelled')
+        $cancelledCount = Reservation::where('status', ReservationStatus::Cancelled->value)
             ->whereBetween('checkin_date', [$start, $end])
             ->count();
 
-        // Total earnings
         $totalEarnings = Payment::where('status', 'success')
-            ->whereBetween('payment_date', [
-                Carbon::parse($start)->startOfDay(), 
-                Carbon::parse($end)->endOfDay()
-            ])
+            ->whereBetween('payment_date', [$startOfDay, $endOfDay])
             ->sum('amount');
 
-        $fnbCount = FnbOrder::whereBetween('order_time', [
-            Carbon::parse($start)->startOfDay(), 
-            Carbon::parse($end)->endOfDay()
-        ])->count();
+        $fnbCount = FnbOrder::whereBetween('order_time', [$startOfDay, $endOfDay])->count();
 
-        $laundryCount = LaundryRequest::whereBetween('request_date', [
-            Carbon::parse($start)->startOfDay(), 
-            Carbon::parse($end)->endOfDay()
-        ])->count();
+        $laundryCount = LaundryRequest::whereBetween('request_date', [$startOfDay, $endOfDay])->count();
 
-        $chargesCount = Charge::whereBetween('created_at', [
-            Carbon::parse($start)->startOfDay(), 
-            Carbon::parse($end)->endOfDay()
-        ])->count();
+        $chargesCount = Charge::whereBetween('created_at', [$startOfDay, $endOfDay])->count();
 
         $invoicePaid = Invoice::where('status', 'paid')
-            ->whereHas('reservation', function($q) {
-                $q->where('status', '!=', 'cancelled');
-            })
+            ->whereHas('reservation', fn($q) => $q->notCancelled())
             ->whereBetween('invoice_date', [$start, $end])
             ->count();
 
         $invoiceUnpaid = Invoice::whereIn('status', ['unpaid', 'partial'])
-            ->whereHas('reservation', function($q) {
-                $q->where('status', '!=', 'cancelled');
-            })
+            ->whereHas('reservation', fn($q) => $q->notCancelled())
             ->whereBetween('invoice_date', [$start, $end])
             ->count();
 
-        // Calculate occupancy rate (same as above)
+        // Occupancy rate — using shared calculation from BillingService
         $roomsCount = Room::count();
-        $totalDays = Carbon::parse($start)->diffInDays(Carbon::parse($end)) + 1;
-        $totalRoomNights = $roomsCount * $totalDays;
-        $occupiedRoomNights = 0;
-        $activeReservations = Reservation::where('status', '!=', 'cancelled')
-            ->where('checkin_date', '<=', $end)
-            ->where('checkout_date', '>=', $start)
-            ->get();
-        foreach ($activeReservations as $res) {
-            $resStart = Carbon::parse(max($res->checkin_date->format('Y-m-d'), $start));
-            $resEnd = Carbon::parse(min($res->checkout_date->format('Y-m-d'), $end));
-            $occupiedRoomNights += max(0, $resStart->diffInDays($resEnd));
-        }
-        $occupancyRate = $totalRoomNights > 0 ? round(($occupiedRoomNights / $totalRoomNights) * 100, 2) : 0;
+        $occupancy = $this->billingService->calculateOccupancyRate($start, $end, $roomsCount);
+        $occupancyRate = $occupancy['occupancyRate'];
 
         return view('reports.summary', compact(
             'reservationsCount', 'checkinsCount', 'checkoutsCount', 'cancelledCount',

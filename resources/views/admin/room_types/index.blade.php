@@ -4,17 +4,67 @@
 
 @section('content')
 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
         <h3 class="text-base font-bold text-slate-800">Manajemen Kategori & Tarif Kamar</h3>
-        @if(!auth()->user()->isManager())
-        <button onclick="openAddModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold shadow-sm uppercase tracking-wider transition-all">
+        @if(auth()->user()->isAdmin() || auth()->user()->isManager())
+        <button onclick="openAddModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold shadow-sm uppercase tracking-wider transition-all w-full sm:w-auto text-center">
             + Tambah Tipe Kamar
         </button>
         @endif
     </div>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
+    <!-- Mobile Cards -->
+    <div class="block md:hidden space-y-3">
+        @foreach($roomTypes as $type)
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-slate-800">{{ $type->name }}</span>
+                        @if($type->description)
+                            <span class="block text-xs text-slate-400 font-normal mt-0.5">{{ $type->description }}</span>
+                        @endif
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-xs font-bold uppercase {{ $type->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                        {{ $type->is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <span class="text-slate-400">Kapasitas</span>
+                        <p class="font-semibold">{{ $type->capacity }} Orang</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Harga Dasar</span>
+                        <p class="font-bold text-slate-800">Rp {{ number_format($type->base_price, 0, ',', '.') }}</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Breakfast</span>
+                        @if($type->breakfast_included)
+                            <p class="text-emerald-700 font-semibold">Included</p>
+                        @else
+                            <p class="font-semibold">Rp {{ number_format($type->breakfast_price, 0, ',', '.') }}</p>
+                        @endif
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Extra Bed</span>
+                        @if($type->extra_bed_allowed)
+                            <p class="font-semibold">Rp {{ number_format($type->extra_bed_price, 0, ',', '.') }}</p>
+                        @else
+                            <p class="text-slate-400">Not Allowed</p>
+                        @endif
+                    </div>
+                </div>
+                @if(auth()->user()->isAdmin() || auth()->user()->isManager())
+                <div class="pt-2 border-t border-slate-100 text-right">
+                    <button onclick="openEditModal({{ json_encode($type) }})" class="text-amber-500 hover:underline text-xs font-bold">Edit</button>
+                </div>
+                @endif
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm border-collapse">
             <thead>
                 <tr class="text-slate-400 font-semibold border-b border-slate-100">
@@ -24,7 +74,7 @@
                     <th class="py-3 px-4">Breakfast Policy</th>
                     <th class="py-3 px-4">Extra Bed Policy</th>
                     <th class="py-3 px-4">Status</th>
-                    @if(!auth()->user()->isManager())
+                    @if(auth()->user()->isAdmin() || auth()->user()->isManager())
                     <th class="py-3 px-4 text-right">Aksi</th>
                     @endif
                 </tr>
@@ -57,7 +107,7 @@
                                 {{ $type->is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </td>
-                        @if(!auth()->user()->isManager())
+                        @if(auth()->user()->isAdmin())
                         <td class="py-4 px-4 text-right">
                             <button onclick="openEditModal({{ json_encode($type) }})" class="text-amber-500 hover:underline text-xs font-bold">Edit</button>
                         </td>

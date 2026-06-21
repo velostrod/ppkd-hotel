@@ -23,8 +23,8 @@ class UserSeeder extends Seeder
         // 1. Admin
         User::create([
             'name' => 'Administrator Kejora',
-            'email' => 'admin@kejora.com',
-            'password' => Hash::make('password'),
+            'email' => 'admin@ppkdhotel.com',
+            'password' => Hash::make('jayajaya'),
             'role_id' => $adminRole->id,
             'status' => 'active',
         ]);
@@ -32,8 +32,8 @@ class UserSeeder extends Seeder
         // 2. FO
         User::create([
             'name' => 'Front Office Staff',
-            'email' => 'fo@kejora.com',
-            'password' => Hash::make('password'),
+            'email' => 'fo@ppkdhotel.com',
+            'password' => Hash::make('jayajaya'),
             'role_id' => $foRole->id,
             'status' => 'active',
         ]);
@@ -41,8 +41,8 @@ class UserSeeder extends Seeder
         // 3. HK
         User::create([
             'name' => 'Housekeeping Staff',
-            'email' => 'hk@kejora.com',
-            'password' => Hash::make('password'),
+            'email' => 'hk@ppkdhotel.com',
+            'password' => Hash::make('jayajaya'),
             'role_id' => $hkRole->id,
             'status' => 'active',
         ]);
@@ -50,8 +50,8 @@ class UserSeeder extends Seeder
         // 4. FnB
         User::create([
             'name' => 'Food & Beverage Staff',
-            'email' => 'fnb@kejora.com',
-            'password' => Hash::make('password'),
+            'email' => 'fnb@ppkdhotel.com',
+            'password' => Hash::make('jayajaya'),
             'role_id' => $fnbRole->id,
             'status' => 'active',
         ]);
@@ -59,8 +59,8 @@ class UserSeeder extends Seeder
         // 5. Manager
         User::create([
             'name' => 'Manager Hotel',
-            'email' => 'manager@kejora.com',
-            'password' => Hash::make('password'),
+            'email' => 'manager@ppkdhotel.com',
+            'password' => Hash::make('jayajaya'),
             'role_id' => $managerRole->id,
             'status' => 'active',
         ]);

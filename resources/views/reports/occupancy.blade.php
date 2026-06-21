@@ -67,5 +67,32 @@
             </div>
         </div>
     </div>
+
+    <!-- Top Room Types by Booking -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Tipe Kamar Favorit (Periode: {{ date('d/m/Y', strtotime($start)) }} - {{ date('d/m/Y', strtotime($end)) }})</h4>
+
+        @if($topRoomTypes->isEmpty())
+            <p class="text-sm text-slate-400 text-center py-4">Tidak ada data booking pada periode ini.</p>
+        @else
+            <div class="space-y-3">
+                @php $maxBooking = $topRoomTypes->first()->booking_count; @endphp
+                @foreach($topRoomTypes as $i => $type)
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs font-bold text-slate-400 w-5 text-right">{{ $i + 1 }}</span>
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-semibold text-slate-700">{{ $type->name }}</span>
+                                <span class="text-xs font-bold text-amber-600">{{ $type->booking_count }} booking</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-amber-400 h-2 rounded-full" style="width: {{ $maxBooking > 0 ? round($type->booking_count / $maxBooking * 100) : 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
 </div>
 @endsection

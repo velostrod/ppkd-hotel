@@ -33,7 +33,7 @@
                             </div>
                         </td>
                         <td class="py-4 px-4">
-                            <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider {{ $ord->status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/30' : 'bg-red-50 text-red-600 border border-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/30' }}">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider {{ $ord->status === 'delivered' ? '!bg-emerald-500 !text-white' : '!bg-red-500 !text-white' }}">
                                 {{ $ord->status }}
                             </span>
                         </td>

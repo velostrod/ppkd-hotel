@@ -110,12 +110,22 @@
         <!-- Brand -->
         <div class="header">
             <div style="float: right; text-align: right;">
-                <div class="header-title">INVOICE</div>
+                @php
+                    $hasInspection = $reservation->roomInspections()->exists();
+                    $docTitle = 'INVOICE';
+                    if ($reservation->invoice) {
+                        if ($reservation->invoice->status === 'paid') $docTitle = 'INVOICE';
+                        elseif ($hasInspection) $docTitle = 'INVOICE';
+                        elseif ($reservation->invoice->status === 'partial') $docTitle = 'BUKTI PEMBAYARAN DP';
+                        else $docTitle = 'TAGIHAN SEMENTARA';
+                    }
+                @endphp
+                <div class="header-title">{{ $docTitle }}</div>
                 <div style="margin-top: 5px; font-weight: bold;">No: {{ $reservation->invoice ? $reservation->invoice->invoice_number : '-' }}</div>
                 <div style="font-size: 12px; color: #666;">Tanggal: {{ $reservation->invoice ? $reservation->invoice->invoice_date->format('d F Y') : now()->format('d F Y') }}</div>
             </div>
             <div>
-                <div style="font-size: 20px; font-weight: bold; letter-spacing: 1px;">{{ $settings->name ?? 'Hotel Kejora' }}</div>
+                <div style="font-size: 20px; font-weight: bold; letter-spacing: 1px;">{{ $settings->name ?? 'PPKD Hotel' }}</div>
                 <div style="font-size: 12px; color: #555; max-width: 350px;">{{ $settings->address ?? 'Yogyakarta' }}</div>
                 <div style="font-size: 12px; color: #555;">Telp: {{ $settings->phone ?? '-' }}</div>
             </div>
@@ -166,27 +176,66 @@
                     <td style="text-align: right;">{{ number_format($roomBasePrice * $nights, 0, ',', '.') }}</td>
                 </tr>
 
-                <!-- Addons -->
-                @foreach($reservation->details as $detail)
-                    @if($detail->type !== 'special_request')
+                @php
+                    $addonCodes = ['fnb', 'laundry'];
+                    $addonCharges = $reservation->charges->filter(fn($c) => in_array($c->chargeType->code, $addonCodes));
+                    $damageCharges = $reservation->charges->filter(fn($c) => !in_array($c->chargeType->code, $addonCodes));
+                    $detailAddons = $reservation->details->where('type', '!=', 'special_request');
+                    $hasAddonSection = $detailAddons->count() > 0 || $addonCharges->count() > 0;
+                @endphp
+
+                <!-- Add-on Charges: Extra Bed, Breakfast, FnB, Laundry -->
+                @if($hasAddonSection)
+                    <tr style="background: #f8fafc;">
+                        <td colspan="4" style="padding: 6px 8px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #64748b;">Add-on Charges</td>
+                    </tr>
+                    @foreach($detailAddons as $detail)
                         <tr>
-                            <td>Addon: {{ $detail->type === 'extra_bed' ? 'Extra Bed' : 'Breakfast' }}</td>
+                            <td style="padding-left: 20px;">
+                                Addon: {{ $detail->type === 'extra_bed' ? 'Extra Bed' : 'Breakfast' }}
+                                @if($detail->type === 'breakfast')
+                                    <br><small>({{ $detail->qty / max(1, $reservation->adults) }} Hari &times; {{ $reservation->adults }} Pax)</small>
+                                @endif
+                            </td>
                             <td style="text-align: center;">{{ $detail->qty }}</td>
                             <td style="text-align: right;">{{ number_format($detail->price, 0, ',', '.') }}</td>
                             <td style="text-align: right;">{{ number_format($detail->qty * $detail->price, 0, ',', '.') }}</td>
                         </tr>
-                    @endif
-                @endforeach
+                    @endforeach
+                    @foreach($addonCharges as $charge)
+                        <tr>
+                            <td style="padding-left: 20px;">{{ $charge->description }}<br><small>{{ $charge->chargeType->name }}</small></td>
+                            <td style="text-align: center;">1</td>
+                            <td style="text-align: right;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
+                            <td style="text-align: right;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
 
-                <!-- Charges (Fnb, laundry, damages) -->
-                @foreach($reservation->charges as $charge)
-                    <tr>
-                        <td>Layanan: {{ $charge->description }}</td>
-                        <td style="text-align: center;">1</td>
-                        <td style="text-align: right;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
-                        <td style="text-align: right;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
+                <!-- Additional Charges: damage/loss only -->
+                @if($damageCharges->count() > 0)
+                    <tr style="background: #f8fafc;">
+                        <td colspan="4" style="padding: 6px 8px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #64748b;">Additional Charges</td>
                     </tr>
-                @endforeach
+                    @foreach($damageCharges as $charge)
+                        <tr>
+                            <td style="padding-left: 20px; font-weight: bold;">{{ $charge->description }}</td>
+                            <td style="text-align: center;">1</td>
+                            <td style="text-align: right; font-weight: bold;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
+                            <td style="text-align: right; font-weight: bold;">{{ number_format($charge->amount, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
+
+                <!-- Pre-checkout Penalty (only shown when billing is computed dynamically) -->
+                @if($billing && $billing['penaltyAmount'] > 0)
+                    <tr>
+                        <td style="font-weight: bold;">{{ $billing['penaltyDesc'] }}</td>
+                        <td style="text-align: center;">1</td>
+                        <td style="text-align: right; font-weight: bold;">{{ number_format($billing['penaltyAmount'], 0, ',', '.') }}</td>
+                        <td style="text-align: right; font-weight: bold;">{{ number_format($billing['penaltyAmount'], 0, ',', '.') }}</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
 
@@ -194,13 +243,29 @@
         <div style="width: 100%;">
             <div class="total-box">
                 @php
-                    $subTotalInvoice = $reservation->subtotal + $reservation->charges()->sum('amount');
-                    $discVal = $reservation->discount;
-                    $taxVal = $reservation->invoice ? $reservation->invoice->tax : $reservation->tax;
-                    $serviceVal = $reservation->invoice ? $reservation->invoice->service_charge : $reservation->service_charge;
-                    $grandTotal = $reservation->invoice ? $reservation->invoice->total_amount : $reservation->total;
-                    $paidAmount = $reservation->invoice ? $reservation->invoice->paid_amount : 0;
-                    $balanceDue = $reservation->invoice ? $reservation->invoice->balance_due : $grandTotal;
+                    if ($billing) {
+                        // Pre-checkout: use dynamic billing data
+                        $subTotalInvoice = $billing['itemsSubtotal'];
+                        $discVal = $billing['discount'];
+                        $serviceVal = $billing['serviceCharge'];
+                        $taxVal = $billing['tax'];
+                        $grandTotal = $billing['grandTotal'];
+                        $paidAmount = $billing['roomPaid'];
+                        $balanceDue = $billing['balance'];
+                        $depositHeld = $billing['depositHeld'];
+                        $depositToReturn = $billing['depositToReturn'];
+                    } else {
+                        // Post-checkout: use persisted DB data
+                        $subTotalInvoice = $reservation->invoice ? $reservation->invoice->subtotal : ($reservation->subtotal + $reservation->charges()->sum('amount'));
+                        $discVal = $reservation->discount;
+                        $serviceVal = $reservation->invoice ? $reservation->invoice->service_charge : $reservation->service_charge;
+                        $taxVal = $reservation->invoice ? $reservation->invoice->tax : $reservation->tax;
+                        $grandTotal = $reservation->invoice ? $reservation->invoice->total_amount : $reservation->total;
+                        $paidAmount = $reservation->invoice ? $reservation->invoice->payments()->where('status','success')->where('type','room')->sum('amount') : 0;
+                        $depositHeld = $reservation->invoice ? ($reservation->invoice->deposit_amount ?? 0) : 0;
+                        $depositToReturn = $reservation->invoice ? (($reservation->invoice->deposit_amount ?? 0) - ($reservation->invoice->deposit_returned ?? 0)) : 0;
+                        $balanceDue = $grandTotal - $paidAmount - $depositHeld;
+                    }
                 @endphp
                 <table>
                     <tr>
@@ -224,17 +289,42 @@
                         <td style="text-align: right;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                     </tr>
                     <tr style="color: green; font-weight: bold;">
-                        <td>Telah Dibayar:</td>
+                        <td>Telah Dibayar (Kamar):</td>
                         <td style="text-align: right;">Rp {{ number_format($paidAmount, 0, ',', '.') }}</td>
                     </tr>
-                    <tr style="color: red; font-weight: bold;">
-                        <td>Sisa Tagihan:</td>
-                        <td style="text-align: right;">Rp {{ number_format($balanceDue, 0, ',', '.') }}</td>
-                    </tr>
+                    @if($depositHeld > 0)
+                        <tr style="color: #92400e; font-weight: bold;">
+                            <td>Deposit Jaminan:</td>
+                            <td style="text-align: right;">Rp {{ number_format($depositHeld, 0, ',', '.') }}</td>
+                        </tr>
+                    @endif
+                    @if($balanceDue < 0)
+                        <tr style="color: blue; font-weight: bold; border-top: 1px dashed #ccc;">
+                            <td style="padding-top: 6px;">Total Refund:</td>
+                            <td style="text-align: right; padding-top: 6px;">Rp {{ number_format(abs($balanceDue), 0, ',', '.') }}</td>
+                        </tr>
+                    @else
+                        <tr style="color: red; font-weight: bold; border-top: 1px dashed #ccc;">
+                            <td style="padding-top: 6px;">Sisa Tagihan:</td>
+                            <td style="text-align: right; padding-top: 6px;">Rp {{ number_format($balanceDue, 0, ',', '.') }}</td>
+                        </tr>
+                    @endif
                 </table>
             </div>
             <div style="clear: both;"></div>
         </div>
+
+        @php
+            $noteDetail = $reservation->details()->where('type', 'special_request')->first();
+        @endphp
+        @if($noteDetail)
+        <div style="margin-top: 30px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc; font-size: 12px; line-height: 1.5; color: #475569;">
+            <div style="font-weight: bold; margin-bottom: 5px; color: #1e293b; text-transform: uppercase;">Catatan Booking:</div>
+            <div style="font-style: italic;">
+                {{ $noteDetail->notes }}
+            </div>
+        </div>
+        @endif
 
         <!-- Signatures -->
         <div class="signature-area">
@@ -250,5 +340,6 @@
             </div>
         </div>
     </div>
+
 </body>
 </html>

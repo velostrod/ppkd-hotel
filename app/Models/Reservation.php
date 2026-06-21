@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ReservationStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,6 +37,10 @@ class Reservation extends Model
         'service_charge' => 'decimal:2',
         'total' => 'decimal:2',
     ];
+
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
 
     public function guest(): BelongsTo
     {
@@ -94,5 +100,57 @@ class Reservation extends Model
     public function roomInspections(): HasMany
     {
         return $this->hasMany(RoomInspection::class);
+    }
+
+    // ==========================================
+    // SCOPES
+    // ==========================================
+
+    /**
+     * Filter to only active reservations (not cancelled or checked out).
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', [
+            ReservationStatus::Cancelled->value,
+            ReservationStatus::CheckedOut->value,
+        ]);
+    }
+
+    /**
+     * Filter to checked-in reservations.
+     */
+    public function scopeCheckedIn(Builder $query): Builder
+    {
+        return $query->where('status', ReservationStatus::CheckedIn->value);
+    }
+
+    /**
+     * Filter to exclude cancelled reservations.
+     */
+    public function scopeNotCancelled(Builder $query): Builder
+    {
+        return $query->where('status', '!=', ReservationStatus::Cancelled->value);
+    }
+
+    // ==========================================
+    // ACCESSORS
+    // ==========================================
+
+    /**
+     * Get the number of nights for this reservation.
+     */
+    public function getNightsAttribute(): int
+    {
+        $nights = $this->checkin_date->startOfDay()->diffInDays($this->checkout_date->startOfDay());
+        return $nights > 0 ? $nights : 1;
+    }
+
+    /**
+     * Check if the reservation is currently active (checked in).
+     */
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === ReservationStatus::CheckedIn->value;
     }
 }

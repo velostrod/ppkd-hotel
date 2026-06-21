@@ -19,7 +19,8 @@ html.dark, html.dark body {
     color: #e2e8f0 !important;
 }
 
-html.dark .bg-white {
+html.dark .bg-white,
+html.dark .md\:bg-white {
     background-color: #1e293b !important;
     color: #e2e8f0 !important;
 }
@@ -34,11 +35,17 @@ html.dark .border-slate-100,
 html.dark .border-slate-200, 
 html.dark .border-slate-50,
 html.dark .border-b,
+html.dark .md\:border-b,
 html.dark .border-t,
+html.dark .md\:border-t,
 html.dark .border,
+html.dark .md\:border,
 html.dark .border-gray-100,
+html.dark .md\:border-gray-100,
 html.dark .border-gray-200,
-html.dark .border-gray-300 {
+html.dark .md\:border-gray-200,
+html.dark .border-gray-300,
+html.dark .md\:border-gray-300 {
     border-color: #334155 !important;
 }
 
@@ -47,6 +54,12 @@ html.dark .text-slate-700,
 html.dark .text-gray-800,
 html.dark .text-gray-700 {
     color: #f1f5f9 !important;
+}
+
+html.dark .text-gray-900,
+html.dark #navbarToggle,
+html.dark #sliderBtn {
+    color: #e2e8f0 !important;
 }
 
 html.dark .text-slate-500, 
@@ -72,6 +85,11 @@ html.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
 html.dark .bg-slate-100 {
     background-color: #334155 !important;
     color: #f1f5f9 !important;
+}
+
+html.dark .bg-slate-300 {
+    background-color: #475569 !important;
+    color: #cbd5e1 !important;
 }
 
 /* Room board & badge status colors override in dark mode */
@@ -266,11 +284,23 @@ textarea {
 .hover\:bg-slate-700:hover {
     background-color: #334155 !important;
 }
+.bg-rose-500 {
+    background-color: #f43f5e !important;
+}
+.hover\:bg-rose-600:hover {
+    background-color: #e11d48 !important;
+}
 
 /* Sidebar mobile responsive drawer slide-in state class */
 @media (max-width: 767px) {
     .md\:ml-0 {
         margin-left: 0px !important;
+    }
+    .md\:block {
+        display: block !important;
+    }
+    .md\:flex {
+        display: flex !important;
     }
 }
 

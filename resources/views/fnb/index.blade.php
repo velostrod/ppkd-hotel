@@ -61,12 +61,12 @@
                             @csrf
                             @if($order->status === 'pending')
                                 <input type="hidden" name="status" value="preparing" />
-                                <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98]">
+                                <button type="submit" class="w-full py-2 !bg-amber-500 hover:!bg-amber-400 !text-slate-950 font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98]">
                                     Mulai Masak (Prepare)
                                 </button>
                             @elseif($order->status === 'preparing')
                                 <input type="hidden" name="status" value="delivered" />
-                                <button type="submit" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98]">
+                                <button type="submit" class="w-full py-2 !bg-emerald-500 hover:!bg-emerald-400 !text-white font-bold text-xs rounded-lg uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98]">
                                     Selesai & Antar (Deliver)
                                 </button>
                             @endif

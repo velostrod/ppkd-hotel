@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreGuestRequest;
 use App\Models\Guest;
 use App\Helpers\ActivityLogger;
-use Illuminate\Http\Request;
 
 class GuestController extends Controller
 {
-    public function index(Request $request)
+    public function index(\Illuminate\Http\Request $request)
     {
         $query = Guest::query();
 
@@ -31,22 +31,18 @@ class GuestController extends Controller
         return view('guests.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreGuestRequest $request)
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'id_number' => 'required|string|max:50',
-            'nationality' => 'required|string|max:100',
-            'gender' => 'required|in:male,female',
-            'notes' => 'nullable|string',
-        ]);
-
-        $guest = Guest::create($validated);
+        $guest = Guest::create($request->validated());
 
         ActivityLogger::log('create', 'guests', "Mendaftarkan tamu baru: {$guest->full_name} (ID: {$guest->id_number})");
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'guest'   => ['id' => $guest->id, 'full_name' => $guest->full_name, 'id_number' => $guest->id_number],
+            ]);
+        }
 
         return redirect()->route('guests.index')->with('success', 'Tamu berhasil didaftarkan.');
     }
@@ -56,20 +52,9 @@ class GuestController extends Controller
         return view('guests.edit', compact('guest'));
     }
 
-    public function update(Request $request, Guest $guest)
+    public function update(StoreGuestRequest $request, Guest $guest)
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'id_number' => 'required|string|max:50',
-            'nationality' => 'required|string|max:100',
-            'gender' => 'required|in:male,female',
-            'notes' => 'nullable|string',
-        ]);
-
-        $guest->update($validated);
+        $guest->update($request->validated());
 
         ActivityLogger::log('update', 'guests', "Mengubah data tamu: {$guest->full_name} (ID: {$guest->id_number})");
 

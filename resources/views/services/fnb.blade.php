@@ -136,16 +136,16 @@
                     <span class="text-sm font-semibold text-slate-800">${item.name}</span>
                     <span class="text-sm font-bold text-slate-700">Rp ${formatIDR(subtotal)}</span>
                 </div>
-                <div class="flex justify-between items-center mt-2">
+                <div class="flex items-center justify-between mt-2 gap-2">
                     <input type="text" 
                            placeholder="Catatan item (pedas, dll)" 
                            name="items[${index}][notes]"
                            value="${item.notes}" 
                            oninput="updateItemNotes(${item.id}, this.value)" 
-                           class="w-48 px-2 py-1 border border-slate-200 rounded text-[11px] focus:outline-none bg-white" />
-                    <div class="flex items-center space-x-2">
+                           class="flex-1 min-w-0 px-2 py-1 border border-slate-200 rounded text-[11px] focus:outline-none bg-white" />
+                    <div class="flex items-center space-x-2 shrink-0">
                         <button type="button" onclick="updateQty(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">-</button>
-                        <span class="text-sm font-semibold">${item.qty}</span>
+                        <span class="text-sm font-semibold w-4 text-center">${item.qty}</span>
                         <button type="button" onclick="updateQty(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">+</button>
                     </div>
                 </div>

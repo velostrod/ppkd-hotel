@@ -32,7 +32,7 @@
                    autofocus 
                    autocomplete="username" 
                    class="block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm"
-                   placeholder="username@kejora.com" />
+                   placeholder="username@ppkdhotel.com" />
         </div>
 
         <!-- Password -->

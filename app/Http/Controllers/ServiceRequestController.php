@@ -2,9 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FnbOrderStatus;
+use App\Enums\HousekeepingRequestStatus;
+use App\Enums\LaundryStatus;
+use App\Enums\ReservationStatus;
+use App\Enums\RoomStatus;
+use App\Http\Requests\StoreCleaningRequest;
+use App\Http\Requests\StoreFnbOrderRequest;
+use App\Http\Requests\StoreLaundryRequest;
+use App\Helpers\CurrencyHelper;
 use App\Models\Reservation;
 use App\Models\FoodItem;
-use App\Models\FoodCategory;
 use App\Models\FnbOrder;
 use App\Models\FnbOrderItem;
 use App\Models\LaundryRequest;
@@ -12,16 +20,17 @@ use App\Models\HousekeepingRequest;
 use App\Models\Charge;
 use App\Models\ChargeType;
 use App\Helpers\ActivityLogger;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ServiceRequestController extends Controller
 {
-    // List active checked-in rooms for dropdown/list selection
+    /**
+     * Get active checked-in reservations for dropdown selection.
+     */
     private function getActiveReservations()
     {
         return Reservation::with(['guest', 'room'])
-            ->where('status', 'checked_in')
+            ->checkedIn()
             ->get();
     }
 
@@ -38,43 +47,38 @@ class ServiceRequestController extends Controller
         return view('services.laundry', compact('activeReservations', 'laundryRequests'));
     }
 
-    public function storeLaundry(Request $request)
+    public function storeLaundry(StoreLaundryRequest $request)
     {
-        $validated = $request->validate([
-            'reservation_id' => 'required|exists:reservations,id',
-            'notes' => 'required|string',
-            'total_charge' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $res = Reservation::find($validated['reservation_id']);
-        if ($res->status !== 'checked_in') {
+        if ($res->status !== ReservationStatus::CheckedIn->value) {
             return back()->with('error', 'Laundry request hanya untuk tamu yang berstatus Checked In.');
         }
 
         DB::beginTransaction();
         try {
-            // Create Laundry Request
-            $laundry = LaundryRequest::create([
+            LaundryRequest::create([
                 'reservation_id' => $res->id,
                 'guest_id' => $res->guest_id,
                 'requested_by' => auth()->id(),
                 'request_date' => now(),
-                'status' => 'requested',
+                'status' => LaundryStatus::Requested->value,
                 'notes' => $validated['notes'],
                 'total_charge' => $validated['total_charge'],
             ]);
 
             // Add charge to reservation
-            $laundryType = ChargeType::where('code', 'laundry')->first();
+            $laundryType = ChargeType::where('code', 'laundry')->firstOrFail();
             Charge::create([
                 'reservation_id' => $res->id,
-                'charge_type_id' => $laundryType ? $laundryType->id : 1, // Fallback to 1 if not exists
+                'charge_type_id' => $laundryType->id,
                 'amount' => $validated['total_charge'],
                 'description' => "Laundry Service: " . $validated['notes'],
                 'created_by' => auth()->id(),
             ]);
 
-            ActivityLogger::log('create', 'laundry_requests', "Input request laundry untuk Kamar {$res->room->room_number}, biaya: Rp " . number_format($validated['total_charge'], 0, ',', '.'));
+            ActivityLogger::log('create', 'laundry_requests', "Input request laundry untuk Kamar {$res->room->room_number}, biaya: " . CurrencyHelper::formatIDRWithPrefix($validated['total_charge']));
 
             DB::commit();
             return back()->with('success', 'Laundry request berhasil dicatat.');
@@ -98,19 +102,12 @@ class ServiceRequestController extends Controller
         return view('services.fnb', compact('activeReservations', 'foodItems', 'orders'));
     }
 
-    public function storeFnb(Request $request)
+    public function storeFnb(StoreFnbOrderRequest $request)
     {
-        $validated = $request->validate([
-            'reservation_id' => 'required|exists:reservations,id',
-            'items' => 'required|array|min:1',
-            'items.*.food_item_id' => 'required|exists:food_items,id',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.notes' => 'nullable|string',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $res = Reservation::find($validated['reservation_id']);
-        if ($res->status !== 'checked_in') {
+        if ($res->status !== ReservationStatus::CheckedIn->value) {
             return back()->with('error', 'Pesanan FnB hanya untuk tamu yang berstatus Checked In.');
         }
 
@@ -118,14 +115,13 @@ class ServiceRequestController extends Controller
         try {
             $totalPrice = 0;
             
-            // Generate temporary order record
             $order = FnbOrder::create([
                 'reservation_id' => $res->id,
                 'guest_id' => $res->guest_id,
                 'requested_by' => auth()->id(),
                 'order_time' => now(),
-                'status' => 'pending',
-                'total_price' => 0, // Will update shortly
+                'status' => FnbOrderStatus::Pending->value,
+                'total_price' => 0,
                 'notes' => $validated['notes'],
             ]);
 
@@ -144,20 +140,19 @@ class ServiceRequestController extends Controller
                 ]);
             }
 
-            // Update order price
             $order->update(['total_price' => $totalPrice]);
 
             // Add charge to reservation invoice
-            $fnbType = ChargeType::where('code', 'fnb')->first();
+            $fnbType = ChargeType::where('code', 'fnb')->firstOrFail();
             Charge::create([
                 'reservation_id' => $res->id,
-                'charge_type_id' => $fnbType ? $fnbType->id : 1,
+                'charge_type_id' => $fnbType->id,
                 'amount' => $totalPrice,
                 'description' => "FnB Order #{$order->id}: " . ($validated['notes'] ?? 'Order makanan/minuman'),
                 'created_by' => auth()->id(),
             ]);
 
-            ActivityLogger::log('create', 'fnb_orders', "Membuat order FnB #{$order->id} untuk Kamar {$res->room->room_number}, total: Rp " . number_format($totalPrice, 0, ',', '.'));
+            ActivityLogger::log('create', 'fnb_orders', "Membuat order FnB #{$order->id} untuk Kamar {$res->room->room_number}, total: " . CurrencyHelper::formatIDRWithPrefix($totalPrice));
 
             DB::commit();
             return back()->with('success', 'Order FnB berhasil dikirim ke dapur.');
@@ -180,36 +175,30 @@ class ServiceRequestController extends Controller
         return view('services.cleaning', compact('activeReservations', 'cleaningRequests'));
     }
 
-    public function storeCleaning(Request $request)
+    public function storeCleaning(StoreCleaningRequest $request)
     {
-        $validated = $request->validate([
-            'reservation_id' => 'required|exists:reservations,id',
-            'request_type' => 'required|in:stayover_cleaning,deep_cleaning,linen_replacement,maintenance',
-            'priority' => 'required|in:low,normal,high,urgent',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $res = Reservation::find($validated['reservation_id']);
-        if ($res->status !== 'checked_in') {
+        if ($res->status !== ReservationStatus::CheckedIn->value) {
             return back()->with('error', 'Stayover cleaning/linen replacement hanya untuk tamu aktif.');
         }
 
         DB::beginTransaction();
         try {
-            $hkRequest = HousekeepingRequest::create([
+            HousekeepingRequest::create([
                 'reservation_id' => $res->id,
                 'room_id' => $res->room_id,
                 'requested_by' => auth()->id(),
                 'request_type' => $validated['request_type'],
                 'priority' => $validated['priority'],
-                'status' => 'pending',
+                'status' => HousekeepingRequestStatus::Pending->value,
                 'request_time' => now(),
                 'notes' => $validated['notes'],
             ]);
 
-            // Update room status temporary to cleaning if stayover
-            // Wait, stayover cleaning temporary changes room status to cleaning
-            $res->room->update(['status' => 'cleaning']);
+            // Update room status temporary to cleaning
+            $res->room->update(['status' => RoomStatus::Cleaning->value]);
 
             ActivityLogger::log('create', 'housekeeping_requests', "Request housekeeping untuk Kamar {$res->room->room_number} (Tipe: {$validated['request_type']})");
 

@@ -13,7 +13,7 @@ class HotelSettingSeeder extends Seeder
     public function run(): void
     {
         HotelSetting::create([
-            'name' => 'Hotel Kejora',
+            'name' => 'PPKD Hootel',
             'address' => 'Jl. Raya Kejora No. 88, Yogyakarta, Indonesia',
             'phone' => '+62 274 555-8888',
             'tax_rate' => 10.00,

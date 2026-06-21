@@ -80,7 +80,12 @@
                                 {{ strtoupper($res->status) }}
                             </span>
                         </td>
-                        <td class="py-4 px-4 font-bold text-slate-700">Rp {{ number_format($res->invoice ? $res->invoice->total_amount : $res->total, 0, ',', '.') }}</td>
+                        <td class="py-4 px-4 font-bold text-slate-700">
+                            @php
+                                $displayTotal = $res->invoice ? $res->invoice->total_amount : $res->total;
+                            @endphp
+                            Rp {{ number_format($displayTotal, 0, ',', '.') }}
+                        </td>
                         <td class="py-4 px-4 text-right space-x-2">
                             <a href="{{ route('reservations.show', $res->id) }}" class="text-slate-800 hover:underline text-xs font-bold">Detail</a>
                             @if($res->status === 'confirmed')

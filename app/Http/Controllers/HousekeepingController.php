@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\HousekeepingRequestStatus;
+use App\Enums\HousekeepingRequestType;
+use App\Enums\RoomStatus;
+use App\Http\Requests\SubmitInspectionRequest;
 use App\Models\HousekeepingRequest;
-use App\Models\HousekeepingRequestItem;
 use App\Models\RoomInspection;
 use App\Models\RoomInspectionItem;
 use App\Models\Room;
@@ -12,6 +15,7 @@ use App\Models\LaundryRequest;
 use App\Models\Charge;
 use App\Models\ChargeType;
 use App\Helpers\ActivityLogger;
+use App\Helpers\CurrencyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +27,7 @@ class HousekeepingController extends Controller
     
     public function dashboard()
     {
-        $pendingRequests = HousekeepingRequest::whereIn('status', ['pending', 'assigned', 'in_progress'])
+        $pendingRequests = HousekeepingRequest::whereIn('status', HousekeepingRequestStatus::activeStatuses())
             ->with(['room.roomType', 'reservation.guest', 'requester', 'assignee'])
             ->orderBy('priority', 'desc')
             ->get();
@@ -32,7 +36,7 @@ class HousekeepingController extends Controller
             ->with(['room', 'reservation.guest'])
             ->get();
 
-        $pendingLaundry = LaundryRequest::whereIn('status', ['requested', 'picked_up', 'processing', 'ready'])
+        $pendingLaundry = LaundryRequest::whereIn('status', \App\Enums\LaundryStatus::activeStatuses())
             ->with(['reservation.room', 'guest', 'requester'])
             ->get();
 
@@ -53,7 +57,7 @@ class HousekeepingController extends Controller
 
         $hkRequest->update([
             'assigned_to' => $validated['assigned_to'],
-            'status' => 'assigned',
+            'status' => HousekeepingRequestStatus::Assigned->value,
         ]);
 
         ActivityLogger::log('update', 'housekeeping_requests', "Menugaskan tiket cleaning Kamar {$hkRequest->room->room_number} ke staf ID: {$validated['assigned_to']}");
@@ -63,8 +67,8 @@ class HousekeepingController extends Controller
 
     public function startRequest(HousekeepingRequest $hkRequest)
     {
-        $hkRequest->update(['status' => 'in_progress']);
-        $hkRequest->room->update(['status' => 'cleaning']);
+        $hkRequest->update(['status' => HousekeepingRequestStatus::InProgress->value]);
+        $hkRequest->room->update(['status' => RoomStatus::Cleaning->value]);
 
         ActivityLogger::log('update', 'housekeeping_requests', "Mulai membersihkan Kamar {$hkRequest->room->room_number}");
 
@@ -76,24 +80,20 @@ class HousekeepingController extends Controller
         DB::beginTransaction();
         try {
             $hkRequest->update([
-                'status' => 'completed',
+                'status' => HousekeepingRequestStatus::Completed->value,
                 'completed_time' => now(),
             ]);
 
-            // Determine final room status based on request type
-            // checkout_cleaning -> inspected
-            // stayover_cleaning/linen -> occupied (back to active guest occupancy)
-            // deep_cleaning/maintenance -> available
-            $finalStatus = 'available';
-            if ($hkRequest->request_type === 'checkout_cleaning') {
-                $finalStatus = 'inspected';
-            } elseif (in_array($hkRequest->request_type, ['stayover_cleaning', 'linen_replacement'])) {
-                $finalStatus = 'occupied';
+            $requestType = HousekeepingRequestType::tryFrom($hkRequest->request_type);
+            if ($requestType === null) {
+                DB::rollBack();
+                return back()->with('error', "Tipe request tidak dikenal: {$hkRequest->request_type}. Hubungi administrator.");
             }
+            $finalStatus = $requestType->completedRoomStatus();
 
-            $hkRequest->room->update(['status' => $finalStatus]);
+            $hkRequest->room->update(['status' => $finalStatus->value]);
 
-            ActivityLogger::log('update', 'housekeeping_requests', "Menyelesaikan pengerjaan Kamar {$hkRequest->room->room_number}. Status kamar menjadi {$finalStatus}");
+            ActivityLogger::log('update', 'housekeeping_requests', "Menyelesaikan pengerjaan Kamar {$hkRequest->room->room_number}. Status kamar menjadi {$finalStatus->value}");
 
             DB::commit();
             return back()->with('success', 'Cleaning request diselesaikan.');
@@ -113,23 +113,12 @@ class HousekeepingController extends Controller
         return view('housekeeping.inspect_form', compact('inspection'));
     }
 
-    public function submitInspection(Request $request, RoomInspection $inspection)
+    public function submitInspection(SubmitInspectionRequest $request, RoomInspection $inspection)
     {
-        $validated = $request->validate([
-            'room_condition' => 'required|in:good,needs_cleaning,damaged',
-            'damage_found' => 'required|boolean',
-            'damage_cost' => 'required_if:damage_found,1|numeric|min:0',
-            'notes' => 'nullable|string',
-            'items' => 'nullable|array',
-            'items.*.item_name' => 'required|string',
-            'items.*.condition' => 'required|in:good,damaged,missing',
-            'items.*.charge_amount' => 'required|numeric|min:0',
-            'items.*.notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
-            // Update Inspection record
             $inspection->update([
                 'inspected_by' => auth()->id(),
                 'inspection_date' => now(),
@@ -153,24 +142,22 @@ class HousekeepingController extends Controller
                 }
             }
 
-            // If damage/loss found, add charge automatically to reservation
+            // If damage/loss found, add charge to reservation
             if ($validated['damage_found'] && $validated['damage_cost'] > 0 && $inspection->reservation_id) {
-                $damageType = ChargeType::where('code', 'damage')->first();
+                $damageType = ChargeType::where('code', 'damage')->firstOrFail();
                 Charge::create([
                     'reservation_id' => $inspection->reservation_id,
-                    'charge_type_id' => $damageType ? $damageType->id : 2, // Fallback to 2
+                    'charge_type_id' => $damageType->id,
                     'amount' => $validated['damage_cost'],
                     'description' => "Hasil Room Inspection Kamar {$inspection->room->room_number}: " . $validated['notes'],
                     'created_by' => auth()->id(),
                 ]);
             }
 
-            // Update room status
-            // If condition needs_cleaning or damaged, mark as dirty
-            // Else, mark room as dirty for normal checkout cleaning process
-            $inspection->room->update(['status' => 'dirty']);
+            // Update room status to dirty for cleaning
+            $inspection->room->update(['status' => RoomStatus::Dirty->value]);
 
-            ActivityLogger::log('update', 'room_inspections', "Inspeksi Kamar {$inspection->room->room_number} selesai. Hasil: {$validated['room_condition']}, Biaya kerusakan: Rp " . number_format($validated['damage_cost'], 0, ',', '.'));
+            ActivityLogger::log('update', 'room_inspections', "Inspeksi Kamar {$inspection->room->room_number} selesai. Hasil: {$validated['room_condition']}, Biaya kerusakan: " . CurrencyHelper::formatIDRWithPrefix($validated['damage_cost']));
 
             DB::commit();
             return redirect()->route('housekeeping.dashboard')->with('success', 'Hasil inspeksi kamar berhasil disimpan.');
@@ -212,14 +199,102 @@ class HousekeepingController extends Controller
         ]);
 
         $oldStatus = $room->status;
-        $room->update([
-            'status' => $validated['status'],
-            'notes' => $validated['notes'] ?? $room->notes,
-        ]);
+        $newStatus = RoomStatus::from($validated['status']);
 
-        ActivityLogger::log('update', 'rooms', "Mengubah manual status Kamar {$room->room_number} dari {$oldStatus} ke {$validated['status']}");
+        DB::beginTransaction();
+        try {
+            $room->update([
+                'status' => $newStatus->value,
+                'notes' => $validated['notes'] ?? $room->notes,
+            ]);
 
-        return back()->with('success', "Status Kamar {$room->room_number} berhasil diubah menjadi " . strtoupper($validated['status']));
+            $this->syncHousekeepingForStatusChange($room, $newStatus, $validated['notes'] ?? null);
+
+            ActivityLogger::log('update', 'rooms', "Mengubah manual status Kamar {$room->room_number} dari {$oldStatus} ke {$newStatus->value}");
+
+            DB::commit();
+            return back()->with('success', "Status Kamar {$room->room_number} berhasil diubah menjadi " . strtoupper($newStatus->value));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memperbarui status kamar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync housekeeping requests and inspections when room status is manually changed.
+     */
+    private function syncHousekeepingForStatusChange(Room $room, RoomStatus $newStatus, ?string $notes): void
+    {
+        $activeStatuses = HousekeepingRequestStatus::activeStatuses();
+
+        if (in_array($newStatus, RoomStatus::completionStatuses())) {
+            // Complete active housekeeping requests
+            HousekeepingRequest::where('room_id', $room->id)
+                ->whereIn('status', $activeStatuses)
+                ->update([
+                    'status' => HousekeepingRequestStatus::Completed->value,
+                    'completed_time' => now(),
+                ]);
+
+            // Complete active room inspections
+            RoomInspection::where('room_id', $room->id)
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'completed',
+                    'inspection_date' => now(),
+                    'notes' => $notes ?? 'Diselesaikan secara manual melalui update status kamar.',
+                ]);
+        } elseif ($newStatus === RoomStatus::Cleaning) {
+            $activeReq = HousekeepingRequest::where('room_id', $room->id)
+                ->whereIn('status', [HousekeepingRequestStatus::Pending->value, HousekeepingRequestStatus::Assigned->value])
+                ->first();
+
+            if ($activeReq) {
+                $activeReq->update(['status' => HousekeepingRequestStatus::InProgress->value]);
+            } else {
+                HousekeepingRequest::create([
+                    'room_id' => $room->id,
+                    'requested_by' => auth()->id(),
+                    'request_type' => HousekeepingRequestType::DeepCleaning->value,
+                    'priority' => 'normal',
+                    'status' => HousekeepingRequestStatus::InProgress->value,
+                    'request_time' => now(),
+                    'notes' => $notes ?? 'Pembersihan manual via update status.',
+                ]);
+            }
+        } elseif ($newStatus === RoomStatus::Dirty) {
+            $activeExists = HousekeepingRequest::where('room_id', $room->id)
+                ->whereIn('status', $activeStatuses)
+                ->exists();
+
+            if (!$activeExists) {
+                HousekeepingRequest::create([
+                    'room_id' => $room->id,
+                    'requested_by' => auth()->id(),
+                    'request_type' => HousekeepingRequestType::DeepCleaning->value,
+                    'priority' => 'normal',
+                    'status' => HousekeepingRequestStatus::Pending->value,
+                    'request_time' => now(),
+                    'notes' => $notes ?? 'Pembersihan manual via update status.',
+                ]);
+            }
+        } elseif ($newStatus === RoomStatus::Maintenance) {
+            $activeExists = HousekeepingRequest::where('room_id', $room->id)
+                ->whereIn('status', $activeStatuses)
+                ->exists();
+
+            if (!$activeExists) {
+                HousekeepingRequest::create([
+                    'room_id' => $room->id,
+                    'requested_by' => auth()->id(),
+                    'request_type' => HousekeepingRequestType::Maintenance->value,
+                    'priority' => 'normal',
+                    'status' => HousekeepingRequestStatus::Pending->value,
+                    'request_time' => now(),
+                    'notes' => $notes ?? 'Pemeliharaan manual via update status.',
+                ]);
+            }
+        }
     }
 
     // ==========================================
@@ -228,7 +303,7 @@ class HousekeepingController extends Controller
 
     public function cleaningHistory()
     {
-        $cleanings = HousekeepingRequest::where('status', 'completed')
+        $cleanings = HousekeepingRequest::where('status', HousekeepingRequestStatus::Completed->value)
             ->with(['room.roomType', 'reservation.guest', 'assignee'])
             ->orderBy('completed_time', 'desc')
             ->paginate(15);

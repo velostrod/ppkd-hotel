@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
         Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
         Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::post('/reservations/{reservation}/extend', [ReservationController::class, 'extend'])->name('reservations.extend');
 
         // Check-in & Checkout Flow
         Route::get('/checkin/{reservation}', [CheckinCheckoutController::class, 'showCheckin'])->name('checkins.create');
@@ -58,6 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/checkout/{reservation}/payment', [CheckinCheckoutController::class, 'processPayment'])->name('checkouts.payment');
         Route::post('/checkout/{reservation}', [CheckinCheckoutController::class, 'processCheckout'])->name('checkouts.store');
         Route::get('/checkout/{reservation}/print', [CheckinCheckoutController::class, 'printInvoice'])->name('checkouts.print');
+        Route::post('/reservations/{reservation}/return-deposit', [CheckinCheckoutController::class, 'returnDeposit'])->name('reservations.return-deposit');
 
         // Service Requests
         Route::get('/services/laundry', [ServiceRequestController::class, 'indexLaundry'])->name('services.laundry');
@@ -101,9 +103,9 @@ Route::middleware('auth')->group(function () {
     // ========================================================
     // ADMIN & MANAGER READ ONLY / OPERATIONAL VIEW
     // ========================================================
-    Route::middleware('role:admin,manager')->group(function () {
+    Route::middleware('role:admin,manager,front_office')->group(function () {
         // Master Room Types CRUD (Read only for Manager)
-        Route::get('/admin/room-types', [AdminController::class, 'roomTypes'])->name('admin.room-types');
+        Route::get('/room-types', [AdminController::class, 'roomTypes'])->name('admin.room-types');
 
         // Master Rooms CRUD (Read only for Manager)
         Route::get('/admin/rooms', [AdminController::class, 'rooms'])->name('admin.rooms');

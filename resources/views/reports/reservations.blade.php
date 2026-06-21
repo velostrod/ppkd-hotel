@@ -16,6 +16,15 @@
                 <input type="date" id="end_date" name="end_date" value="{{ $end }}" class="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-amber-500 bg-white" />
             </div>
             <div>
+                <label for="room_type_id" class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe Kamar</label>
+                <select id="room_type_id" name="room_type_id" class="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-amber-500 bg-white">
+                    <option value="">Semua Tipe</option>
+                    @foreach($roomTypes as $type)
+                        <option value="{{ $type->id }}" {{ $roomTypeId == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
                 <button type="submit" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold uppercase tracking-wider">
                     Filter Laporan
                 </button>
@@ -41,14 +50,19 @@
                         <th class="pb-2">Check-out</th>
                         <th class="pb-2">Status</th>
                         <th class="pb-2 text-right">Total Biaya</th>
+                        <th class="pb-2 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50 text-slate-700">
                     @forelse($reservations as $res)
                         <tr>
-                            <td class="py-3 font-bold text-slate-800">{{ $res->reservation_code }}</td>
+                            <td class="py-3 font-bold">
+                                <a href="{{ route('reservations.show', $res->id) }}" class="text-amber-600 hover:text-amber-700 hover:underline">
+                                    {{ $res->reservation_code }}
+                                </a>
+                            </td>
                             <td class="py-3 font-semibold text-slate-700">{{ $res->guest->full_name }}</td>
-                            <td class="py-3">Kamar #{{ $res->room->room_number }} ({{ $res->room->roomType->name }})</td>
+                            <td class="py-3">Kamar #{{ $res->room->room_number }} <span class="text-xs text-slate-400">({{ $res->room->roomType->name }})</span></td>
                             <td class="py-3 text-slate-500 text-xs">{{ $res->checkin_date->format('d/m/Y') }}</td>
                             <td class="py-3 text-slate-500 text-xs">{{ $res->checkout_date->format('d/m/Y') }}</td>
                             <td class="py-3">
@@ -56,17 +70,22 @@
                                     $rB = 'bg-slate-100 text-slate-600';
                                     switch($res->status) {
                                         case 'pending': $rB = 'bg-slate-100 text-slate-700'; break;
-                                        case 'confirmed': $rB = 'bg-blue-50 text-blue-700'; break;
-                                        case 'checked_in': $rB = 'bg-rose-50 text-rose-700'; break;
-                                        case 'checked_out': $rB = 'bg-emerald-50 text-emerald-700'; break;
-                                        case 'cancelled': $rB = 'bg-red-50 text-red-600'; break;
+                                        case 'confirmed': $rB = 'bg-blue-50 text-blue-700 border border-blue-100'; break;
+                                        case 'checked_in': $rB = 'bg-rose-50 text-rose-700 border border-rose-100'; break;
+                                        case 'checked_out': $rB = 'bg-emerald-50 text-emerald-700 border border-emerald-100'; break;
+                                        case 'cancelled': $rB = 'bg-red-50 text-red-600 border border-red-100'; break;
                                     }
                                 @endphp
-                                <span class="px-2 py-0.5 rounded text-xs font-semibold uppercase {{ $rB }}">
-                                    {{ $res->status }}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $rB }}">
+                                    {{ str_replace('_', ' ', $res->status) }}
                                 </span>
                             </td>
                             <td class="py-3 text-right font-bold text-slate-800">Rp {{ number_format($res->invoice ? $res->invoice->total_amount : $res->total, 0, ',', '.') }}</td>
+                            <td class="py-3 text-right">
+                                <a href="{{ route('reservations.show', $res->id) }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-wider transition-colors">
+                                    Detail
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>

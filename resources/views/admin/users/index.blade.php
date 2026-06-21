@@ -4,15 +4,44 @@
 
 @section('content')
 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
         <h3 class="text-base font-bold text-slate-800">Daftar Akun Staff Hotel</h3>
-        <button onclick="openAddModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold shadow-sm uppercase tracking-wider transition-all">
+        <button onclick="openAddModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold shadow-sm uppercase tracking-wider transition-all w-full sm:w-auto text-center">
             + Tambah Staff
         </button>
     </div>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
+    <!-- Mobile Cards -->
+    <div class="block md:hidden space-y-3">
+        @foreach($users as $user)
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">{{ $user->name }}</span>
+                    <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100' }}">
+                        {{ $user->status }}
+                    </span>
+                </div>
+                <div class="text-xs text-slate-500">{{ $user->email }}</div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold uppercase tracking-wider">
+                        {{ str_replace('_', ' ', $user->role->name) }}
+                    </span>
+                    <div class="space-x-3 shrink-0">
+                        <button onclick="openEditModal({{ json_encode($user) }})" class="text-amber-500 hover:underline text-xs font-bold whitespace-nowrap">Edit</button>
+                        <form action="{{ route('admin.users.toggle', $user->id) }}" method="POST" class="inline-block">
+                            @csrf
+                            <button type="submit" class="{{ $user->status === 'active' ? 'text-rose-500' : 'text-emerald-500' }} hover:underline text-xs font-bold whitespace-nowrap">
+                                {{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm border-collapse">
             <thead>
                 <tr class="text-slate-400 font-semibold border-b border-slate-100">

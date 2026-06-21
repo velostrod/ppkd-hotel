@@ -10,14 +10,14 @@
 <div id="sideBar" class="relative flex flex-col bg-white border-r border-gray-300 p-6 flex-none w-64 border-t border-gray-100 {{ $c('-ml-64') }} {{ $c('fixed') }} {{ $c('top-0') }} {{ $c('z-30') }} {{ $c('h-screen') }} {{ $c('shadow-xl') }} transition-all duration-300">
     
     <!-- sidebar content -->
-    <div class="flex flex-col">
+    <div class="flex flex-col flex-grow overflow-y-auto pr-1">
 
         <!-- Logo and Close Button (Mobile Only) -->
         <div class="flex flex-row items-center justify-between mb-6 hidden {{ $c('flex') }}">
-            <!-- Logo & KEJORA text -->
+            <!-- Logo & PPKD text -->
             <div class="flex items-center space-x-2">
                 <img src="{{ asset('template/dist/img/logo.png') }}" class="w-8 h-8">
-                <strong class="capitalize text-teal-600 font-bold tracking-wider text-base sm:text-lg">KEJORA</strong>
+                <strong class="capitalize text-teal-600 font-bold tracking-wider text-base sm:text-lg">PPKD</strong>
             </div>
 
             <!-- Close button -->
@@ -136,6 +136,13 @@
             </a>
             <!-- end link -->
 
+            <!-- link -->
+            <a href="{{ route('admin.room-types') }}" class="mb-3 capitalize font-medium text-sm transition ease-in-out duration-500 flex items-center {{ request()->routeIs('admin.room-types*') ? 'text-teal-600 font-bold' : 'text-gray-700 hover:text-teal-600' }}">
+                <i class="fad fa-tags text-xs mr-3 {{ request()->routeIs('admin.room-types*') ? 'text-teal-600' : 'text-gray-400' }}"></i>
+                Tipe Kamar (Pricing)
+            </a>
+            <!-- end link -->
+
             <p class="uppercase text-xs text-gray-500 mb-4 mt-6 tracking-wider font-semibold">Layanan Tamu</p>
 
             <!-- link -->
@@ -211,6 +218,43 @@
 
     </div>
     <!-- end sidebar content -->
+
+    <!-- Profile Dropup & Theme Toggle -->
+    <div class="mt-auto border-t border-gray-200 pt-4 flex items-center justify-between">
+        <!-- user dropdown -->
+        <div class="dropdown relative flex-1">
+            <button class="menu-btn focus:outline-none flex items-center w-full text-left">
+                <div class="w-8 h-8 overflow-hidden rounded-full border border-gray-300 shrink-0">
+                    <img class="w-full h-full object-cover" src="{{ asset('template/dist/img/user.svg') }}" alt="user image">
+                </div>
+                <div class="ml-2 min-w-0">
+                    <h1 class="text-sm text-gray-800 font-semibold leading-tight truncate">{{ auth()->user()->name }}</h1>
+                    <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">{{ auth()->user()->role->name }}</span>
+                </div>
+            </button>
+
+            <button class="hidden fixed top-0 left-0 z-10 w-full h-full menu-overflow"></button>
+
+            <!-- Dropup menu: absolute bottom-full mb-2 -->
+            <div class="text-gray-500 menu hidden rounded bg-white shadow-md absolute z-20 left-0 w-48 mb-2 bottom-full py-1 animated faster border border-gray-100">
+                <!-- logout -->
+                <form method="POST" action="{{ route('logout') }}" class="m-0">
+                    @csrf
+                    <button type="submit" class="w-full text-left px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-100 hover:text-red-600 transition-all duration-300 ease-in-out">
+                        <i class="fad fa-sign-out-alt text-xs mr-2"></i> log out
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none transition-colors shrink-0 ml-2" title="Toggle Night Mode">
+            <!-- Sun Icon -->
+            <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/></svg>
+            <!-- Moon Icon -->
+            <svg id="theme-icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+    </div>
 
 </div>
 <!-- end sidebar -->

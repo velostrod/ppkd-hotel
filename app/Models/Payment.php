@@ -15,6 +15,7 @@ class Payment extends Model
         'reference_number',
         'notes',
         'status',
+        'type',
         'created_by',
     ];
 

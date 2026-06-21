@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReservationStatus;
+use App\Enums\RoomStatus;
+use App\Http\Requests\StoreReservationRequest;
 use App\Models\Guest;
 use App\Models\Room;
-use App\Models\RoomType;
-use App\Models\Reservation;
-use App\Models\ReservationDetail;
 use App\Models\HotelSetting;
-use App\Models\Invoice;
+use App\Models\PaymentMethod;
+use App\Models\Reservation;
+use App\Services\BillingService;
+use App\Services\ReservationService;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +19,11 @@ use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
+    public function __construct(
+        private readonly ReservationService $reservationService,
+        private readonly BillingService $billingService,
+    ) {}
+
     public function index(Request $request)
     {
         $query = Reservation::with(['guest', 'room.roomType', 'invoice']);
@@ -49,49 +57,25 @@ class ReservationController extends Controller
         $checkout = $request->input('checkout_date', now()->addDay()->format('Y-m-d'));
         
         $rooms = Room::with('roomType')
-            ->where('is_active', true)
+            ->active()
             ->get()
             ->map(function($room) use ($checkin, $checkout) {
-                // Check if occupied or reserved in date range
-                $isBooked = Reservation::where('room_id', $room->id)
-                    ->whereNotIn('status', ['cancelled', 'checked_out'])
-                    ->where('checkin_date', '<', $checkout)
-                    ->where('checkout_date', '>', $checkin)
-                    ->exists();
-                $room->is_available_in_range = !$isBooked;
+                $room->is_available_in_range = $room->isAvailableForDates($checkin, $checkout);
                 return $room;
             });
 
-        return view('reservations.create', compact('guests', 'rooms', 'checkin', 'checkout'));
+        $paymentMethods = PaymentMethod::where('is_active', true)->get();
+
+        return view('reservations.create', compact('guests', 'rooms', 'checkin', 'checkout', 'paymentMethods'));
     }
 
-    public function store(Request $request)
+    public function store(StoreReservationRequest $request)
     {
-        $validated = $request->validate([
-            'guest_id' => 'required|exists:guests,id',
-            'room_id' => 'required|exists:rooms,id',
-            'checkin_date' => 'required|date|after_or_equal:today',
-            'checkout_date' => 'required|date|after:checkin_date',
-            'adults' => 'required|integer|min:1',
-            'children' => 'required|integer|min:0',
-            'breakfast' => 'nullable|boolean',
-            'extra_bed' => 'nullable|boolean',
-            'discount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
-
-        $checkin = $validated['checkin_date'];
-        $checkout = $validated['checkout_date'];
+        $validated = $request->validated();
         $room = Room::with('roomType')->find($validated['room_id']);
 
         // 1. Overlap Check
-        $isBooked = Reservation::where('room_id', $room->id)
-            ->whereNotIn('status', ['cancelled', 'checked_out'])
-            ->where('checkin_date', '<', $checkout)
-            ->where('checkout_date', '>', $checkin)
-            ->exists();
-
-        if ($isBooked) {
+        if (!$this->reservationService->isRoomAvailable($room->id, $validated['checkin_date'], $validated['checkout_date'])) {
             return back()->withErrors(['room_id' => 'Kamar ini sudah terbooking pada tanggal tersebut.'])->withInput();
         }
 
@@ -101,145 +85,13 @@ class ReservationController extends Controller
         }
 
         $settings = HotelSetting::first();
-        $nights = Carbon::parse($checkin)->diffInDays(Carbon::parse($checkout));
-        $nights = $nights > 0 ? $nights : 1;
-
-        // 2. Pricing Calculations
-        $roomCharge = $room->roomType->base_price * $nights;
-        $subtotal = $roomCharge;
-
-        $extraBedCharge = 0;
-        if ($request->has('extra_bed') && $room->roomType->extra_bed_allowed) {
-            $extraBedCharge = $room->roomType->extra_bed_price * $nights;
-            $subtotal += $extraBedCharge;
-        }
-
-        $breakfastCharge = 0;
-        // Check if breakfast is included automatically (base_price > threshold)
-        $isBreakfastIncluded = $room->roomType->base_price >= ($settings->breakfast_threshold ?? 600000.00) 
-            || $room->roomType->breakfast_included;
-
-        if ($request->has('breakfast') && !$isBreakfastIncluded) {
-            $breakfastCharge = $room->roomType->breakfast_price * $validated['adults'] * $nights;
-            $subtotal += $breakfastCharge;
-        }
-
-        $discount = $request->input('discount', 0);
-        $discountedSubtotal = max(0, $subtotal - $discount);
-
-        $taxRate = $settings->tax_rate ?? 10.00;
-        $serviceRate = $settings->service_charge_rate ?? 5.00;
-
-        $serviceCharge = $discountedSubtotal * ($serviceRate / 100);
-        $tax = ($discountedSubtotal + $serviceCharge) * ($taxRate / 100);
-        $total = $discountedSubtotal + $serviceCharge + $tax;
 
         DB::beginTransaction();
         try {
-            // Generate Booking Code: BK-ROOMNO-YYYYMMDD-XXXX
-            $prefix = $settings->booking_prefix ?? 'BK';
-            $datePart = now()->format('Ymd');
-            $roomNo = $room->room_number;
-            $searchPattern = "{$prefix}-{$roomNo}-{$datePart}-%";
-            
-            $lastRes = Reservation::where('reservation_code', 'like', $searchPattern)
-                ->orderBy('reservation_code', 'desc')
-                ->lockForUpdate()
-                ->first();
+            $reservation = $this->reservationService->createReservation($validated, $room, $settings);
 
-            $seq = 1;
-            if ($lastRes) {
-                $lastSeq = (int) substr($lastRes->reservation_code, -4);
-                $seq = $lastSeq + 1;
-            }
-            $seqPart = str_pad($seq, 4, '0', STR_PAD_LEFT);
-            $bookingCode = "{$prefix}-{$roomNo}-{$datePart}-{$seqPart}";
-
-            // Create Reservation
-            $reservation = Reservation::create([
-                'reservation_code' => $bookingCode,
-                'guest_id' => $validated['guest_id'],
-                'room_id' => $validated['room_id'],
-                'checkin_date' => $checkin,
-                'checkout_date' => $checkout,
-                'adults' => $validated['adults'],
-                'children' => $validated['children'],
-                'status' => 'confirmed',
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'tax' => $tax,
-                'service_charge' => $serviceCharge,
-                'total' => $total,
-                'created_by' => auth()->id(),
-            ]);
-
-            // Save Reservation Details (Addons)
-            if ($request->has('extra_bed') && $room->roomType->extra_bed_allowed) {
-                ReservationDetail::create([
-                    'reservation_id' => $reservation->id,
-                    'type' => 'extra_bed',
-                    'qty' => $nights,
-                    'price' => $room->roomType->extra_bed_price,
-                    'notes' => 'Extra Bed Service',
-                ]);
-            }
-
-            if ($request->has('breakfast')) {
-                ReservationDetail::create([
-                    'reservation_id' => $reservation->id,
-                    'type' => 'breakfast',
-                    'qty' => $validated['adults'] * $nights,
-                    'price' => $isBreakfastIncluded ? 0 : $room->roomType->breakfast_price,
-                    'notes' => $isBreakfastIncluded ? 'Breakfast Included' : 'Addon Breakfast',
-                ]);
-            }
-
-            if ($validated['notes']) {
-                ReservationDetail::create([
-                    'reservation_id' => $reservation->id,
-                    'type' => 'special_request',
-                    'qty' => 1,
-                    'price' => 0,
-                    'notes' => $validated['notes'],
-                ]);
-            }
-
-            // Room status update to reserved (only if check-in is not today or status remains available until checkin)
-            // PRD says: "Status kamar berubah menjadi reserved". So let's update room status to reserved.
-            $room->update(['status' => 'reserved']);
-
-            // Create Invoice
-            $invPrefix = $settings->invoice_prefix ?? 'INV';
-            $lastInv = Invoice::where('invoice_number', 'like', "{$invPrefix}-{$datePart}-%")
-                ->orderBy('invoice_number', 'desc')
-                ->first();
-
-            $invSeq = 1;
-            if ($lastInv) {
-                $lastInvSeq = (int) substr($lastInv->invoice_number, -4);
-                $invSeq = $lastInvSeq + 1;
-            }
-            $invSeqPart = str_pad($invSeq, 4, '0', STR_PAD_LEFT);
-            $invoiceNumber = "{$invPrefix}-{$datePart}-{$invSeqPart}";
-
-            Invoice::create([
-                'invoice_number' => $invoiceNumber,
-                'reservation_id' => $reservation->id,
-                'invoice_date' => now()->format('Y-m-d'),
-                'subtotal' => $subtotal,
-                'tax' => $tax,
-                'service_charge' => $serviceCharge,
-                'discount' => $discount,
-                'total_amount' => $total,
-                'paid_amount' => 0,
-                'balance_due' => $total,
-                'status' => 'unpaid',
-            ]);
-
-            ActivityLogger::log('create', 'reservations', "Membuat reservasi baru: {$bookingCode} untuk kamar {$room->room_number}");
-            
             DB::commit();
-            return redirect()->route('reservations.index')->with('success', "Booking {$bookingCode} berhasil dibuat.");
+            return redirect()->route('reservations.index')->with('success', "Booking {$reservation->reservation_code} berhasil dibuat.");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage())->withInput();
@@ -249,26 +101,32 @@ class ReservationController extends Controller
     public function show(Reservation $reservation)
     {
         $reservation->load(['guest', 'room.roomType', 'details', 'checkin', 'checkout', 'invoice.payments.paymentMethod', 'charges.chargeType', 'roomInspections']);
-        
+
         $latestInspection = $reservation->roomInspections->sortByDesc('created_at')->first();
 
-        return view('reservations.show', compact('reservation', 'latestInspection'));
+        $billing = null;
+        if ($reservation->status === \App\Enums\ReservationStatus::CheckedIn->value) {
+            $settings = HotelSetting::first();
+            $billing = $this->billingService->computeCheckoutBilling($reservation, $settings, true);
+        }
+
+        return view('reservations.show', compact('reservation', 'latestInspection', 'billing'));
     }
 
     public function cancel(Reservation $reservation)
     {
-        if (in_array($reservation->status, ['checked_in', 'checked_out', 'cancelled'])) {
+        if (in_array($reservation->status, ReservationStatus::nonCancellableStatuses())) {
             return back()->with('error', 'Status reservasi tidak dapat dibatalkan.');
         }
 
         DB::beginTransaction();
         try {
-            $reservation->update(['status' => 'cancelled']);
+            $reservation->update(['status' => ReservationStatus::Cancelled->value]);
             
             // Release room to available if it was reserved
             $room = $reservation->room;
-            if ($room->status === 'reserved') {
-                $room->update(['status' => 'available']);
+            if ($room->status === RoomStatus::Reserved->value) {
+                $room->update(['status' => RoomStatus::Available->value]);
             }
 
             ActivityLogger::log('update', 'reservations', "Membatalkan reservasi: {$reservation->reservation_code}");
@@ -278,6 +136,97 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan sistem.');
+        }
+    }
+
+    public function extend(Request $request, Reservation $reservation)
+    {
+        if (!in_array($reservation->status, [ReservationStatus::Confirmed->value, ReservationStatus::CheckedIn->value])) {
+            return back()->with('error', 'Perpanjangan hanya dapat dilakukan untuk reservasi aktif atau terkonfirmasi.');
+        }
+
+        $validated = $request->validate([
+            'extend_nights' => 'required|integer|min:1',
+        ]);
+
+        $additionalNights = (int) $validated['extend_nights'];
+        
+        $currentCheckoutDate = Carbon::parse($reservation->checkout_date);
+        $newCheckoutDate = $currentCheckoutDate->copy()->addDays($additionalNights);
+
+        // Check availability overlap
+        if (!$this->reservationService->isRoomAvailable(
+            $reservation->room_id,
+            $currentCheckoutDate->format('Y-m-d'),
+            $newCheckoutDate->format('Y-m-d'),
+            $reservation->id
+        )) {
+            return back()->with('error', "Kamar #{$reservation->room->room_number} tidak tersedia untuk periode perpanjangan tersebut (sudah terbooking/diisi tamu lain).");
+        }
+
+        DB::beginTransaction();
+        try {
+            $checkin = Carbon::parse($reservation->checkin_date);
+            $newNights = $checkin->diffInDays($newCheckoutDate);
+            $newNights = $newNights > 0 ? $newNights : 1;
+
+            $settings = HotelSetting::first();
+
+            // Recalculate addon details
+            $extraBedDetail = $reservation->details()->where('type', 'extra_bed')->first();
+            if ($extraBedDetail) {
+                $extraBedDetail->update(['qty' => $newNights]);
+            }
+
+            $breakfastDetail = $reservation->details()->where('type', 'breakfast')->first();
+            if ($breakfastDetail) {
+                $breakfastDetail->update(['qty' => $reservation->adults * $newNights]);
+            }
+
+            // Use BillingService for calculation
+            $billing = $this->billingService->calculateExtensionBilling($reservation, $newNights, $settings);
+
+            // Update Reservation
+            $reservation->update([
+                'checkout_date' => $newCheckoutDate->format('Y-m-d'),
+                'subtotal' => $billing['subtotal'],
+                'tax' => $billing['tax'],
+                'service_charge' => $billing['serviceCharge'],
+                'total' => $billing['total'],
+            ]);
+
+            // Update Invoice
+            $invoice = $reservation->invoice;
+            if ($invoice) {
+                $additionalCharges = $reservation->charges()->sum('amount');
+                $invoiceSubtotal = $billing['subtotal'] + $additionalCharges;
+
+                $discount = $reservation->discount;
+                $serviceRate = $settings->service_charge_rate ?? 5.00;
+                $taxRate = $settings->tax_rate ?? 10.00;
+
+                $discountedSubtotal = max(0, $invoiceSubtotal - $discount);
+                $invoiceServiceCharge = $discountedSubtotal * ($serviceRate / 100);
+                $invoiceTax = ($discountedSubtotal + $invoiceServiceCharge) * ($taxRate / 100);
+                $invoiceTotal = $discountedSubtotal + $invoiceServiceCharge + $invoiceTax;
+
+                $invoice->update([
+                    'subtotal' => $invoiceSubtotal,
+                    'tax' => $invoiceTax,
+                    'service_charge' => $invoiceServiceCharge,
+                    'total_amount' => $invoiceTotal,
+                ]);
+
+                $this->billingService->recalculateInvoiceAfterPayment($invoice);
+            }
+
+            ActivityLogger::log('update', 'reservations', "Memperpanjang masa menginap reservasi {$reservation->reservation_code} sebanyak {$additionalNights} malam. Checkout baru: {$newCheckoutDate->format('d/m/Y')}");
+
+            DB::commit();
+            return redirect()->route('reservations.show', $reservation->id)->with('success', "Masa menginap berhasil diperpanjang {$additionalNights} malam.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FnbOrderStatus;
 use App\Models\FnbOrder;
-use App\Models\FnbOrderItem;
+use App\Models\Charge;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 
@@ -11,8 +12,7 @@ class FoodAndBeverageController extends Controller
 {
     public function index()
     {
-        // Incoming and active orders
-        $activeOrders = FnbOrder::whereIn('status', ['pending', 'confirmed', 'preparing'])
+        $activeOrders = FnbOrder::whereIn('status', FnbOrderStatus::activeStatuses())
             ->with(['reservation.room', 'guest', 'requester', 'items.foodItem'])
             ->orderBy('order_time', 'asc')
             ->get();
@@ -32,14 +32,13 @@ class FoodAndBeverageController extends Controller
             'handled_by' => auth()->id(),
         ]);
 
-        // If cancelled, we need to subtract the charge from the guest bill?
-        // Wait, if an order is cancelled, we should remove the corresponding charge or update it to 0
-        // Let's implement that: if status changes to cancelled, we find the charge and update its amount to 0
-        if ($validated['status'] === 'cancelled' && $oldStatus !== 'cancelled') {
+        // If cancelled, zero out the corresponding charge
+        if ($validated['status'] === FnbOrderStatus::Cancelled->value && $oldStatus !== FnbOrderStatus::Cancelled->value) {
             $chargeDescPattern = "FnB Order #{$order->id}:%";
-            $charge = \App\Models\Charge::where('reservation_id', $order->reservation_id)
+            $charge = Charge::where('reservation_id', $order->reservation_id)
                 ->where('description', 'like', $chargeDescPattern)
                 ->first();
+
             if ($charge) {
                 $charge->update([
                     'amount' => 0.00,
@@ -55,7 +54,7 @@ class FoodAndBeverageController extends Controller
 
     public function orderHistory()
     {
-        $orders = FnbOrder::whereIn('status', ['delivered', 'cancelled'])
+        $orders = FnbOrder::whereIn('status', FnbOrderStatus::completedStatuses())
             ->with(['reservation.room', 'guest', 'items.foodItem'])
             ->orderBy('updated_at', 'desc')
             ->paginate(15);

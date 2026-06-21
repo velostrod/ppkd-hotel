@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\HotelSetting;
-use App\Models\PaymentMethod;
-use App\Models\ChargeType;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,15 +26,9 @@ class AdminController extends Controller
         return view('admin.users.index', compact('users', 'roles'));
     }
 
-    public function storeUser(Request $request)
+    public function storeUser(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role_id' => 'required|exists:roles,id',
-            'status' => 'required|in:active,inactive',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -49,15 +43,9 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan.');
     }
 
-    public function updateUser(Request $request, User $user)
+    public function updateUser(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8',
-            'role_id' => 'required|exists:roles,id',
-            'status' => 'required|in:active,inactive',
-        ]);
+        $validated = $request->validated();
 
         $updateData = [
             'name' => $validated['name'],
@@ -223,6 +211,8 @@ class AdminController extends Controller
             'breakfast_threshold' => 'required|numeric|min:0',
             'invoice_prefix' => 'required|string|max:10',
             'booking_prefix' => 'required|string|max:10',
+            'checkin_time' => 'required|date_format:H:i',
+            'checkout_time' => 'required|date_format:H:i',
         ]);
 
         $settings->update($validated);
