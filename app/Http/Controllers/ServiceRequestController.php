@@ -21,6 +21,7 @@ use App\Models\Charge;
 use App\Models\ChargeType;
 use App\Helpers\ActivityLogger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ServiceRequestController extends Controller
 {
@@ -84,7 +85,8 @@ class ServiceRequestController extends Controller
             return back()->with('success', 'Laundry request berhasil dicatat.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mencatat request laundry: ' . $e->getMessage());
+            Log::error('Gagal mencatat laundry request', ['exception' => $e]);
+            return back()->with('error', 'Gagal mencatat request laundry. Silakan coba lagi.');
         }
     }
 
@@ -158,7 +160,8 @@ class ServiceRequestController extends Controller
             return back()->with('success', 'Order FnB berhasil dikirim ke dapur.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mencatat order FnB: ' . $e->getMessage());
+            Log::error('Gagal mencatat order FnB', ['exception' => $e]);
+            return back()->with('error', 'Gagal mencatat order FnB. Silakan coba lagi.');
         }
     }
 
@@ -206,7 +209,8 @@ class ServiceRequestController extends Controller
             return back()->with('success', 'Permintaan Housekeeping berhasil dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mengirim request Housekeeping: ' . $e->getMessage());
+            Log::error('Gagal mengirim request Housekeeping', ['exception' => $e]);
+            return back()->with('error', 'Gagal mengirim request Housekeeping. Silakan coba lagi.');
         }
     }
 }

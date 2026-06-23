@@ -15,6 +15,7 @@ use App\Services\ReservationService;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ReservationController extends Controller
@@ -94,7 +95,8 @@ class ReservationController extends Controller
             return redirect()->route('reservations.index')->with('success', "Booking {$reservation->reservation_code} berhasil dibuat.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage())->withInput();
+            Log::error('Gagal membuat reservasi', ['exception' => $e]);
+            return back()->with('error', 'Terjadi kesalahan sistem. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -226,7 +228,8 @@ class ReservationController extends Controller
             return redirect()->route('reservations.show', $reservation->id)->with('success', "Masa menginap berhasil diperpanjang {$additionalNights} malam.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+            Log::error('Gagal memperpanjang reservasi', ['exception' => $e]);
+            return back()->with('error', 'Terjadi kesalahan sistem. Silakan coba lagi.');
         }
     }
 }

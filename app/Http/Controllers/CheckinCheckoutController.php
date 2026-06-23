@@ -15,6 +15,7 @@ use App\Services\CheckoutService;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CheckinCheckoutController extends Controller
 {
@@ -64,7 +65,8 @@ class CheckinCheckoutController extends Controller
             return redirect()->route('reservations.show', $reservation->id)->with('success', 'Check-in berhasil diproses.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Gagal memproses check-in', ['exception' => $e]);
+            return back()->with('error', 'Terjadi kesalahan saat proses check-in. Silakan coba lagi.');
         }
     }
 
@@ -96,7 +98,8 @@ class CheckinCheckoutController extends Controller
             return back()->with('success', 'Permintaan inspeksi kamar dikirim ke Housekeeping.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal meminta inspeksi kamar.');
+            Log::error('Gagal meminta inspeksi kamar', ['exception' => $e]);
+            return back()->with('error', 'Gagal meminta inspeksi kamar. Silakan coba lagi.');
         }
     }
 
@@ -149,7 +152,8 @@ class CheckinCheckoutController extends Controller
             return back()->with('success', 'Pembayaran berhasil dicatat.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mencatat pembayaran: ' . $e->getMessage());
+            Log::error('Gagal mencatat pembayaran', ['exception' => $e]);
+            return back()->with('error', 'Gagal mencatat pembayaran. Silakan coba lagi.');
         }
     }
 
@@ -186,7 +190,8 @@ class CheckinCheckoutController extends Controller
             return back()->with('success', 'Pengembalian deposit berhasil dicatat.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mencatat pengembalian deposit: ' . $e->getMessage());
+            Log::error('Gagal mencatat pengembalian deposit', ['exception' => $e]);
+            return back()->with('error', 'Gagal mencatat pengembalian deposit. Silakan coba lagi.');
         }
     }
 
@@ -225,7 +230,8 @@ class CheckinCheckoutController extends Controller
             return redirect()->route('reservations.show', $reservation->id)->with('success', 'Checkout berhasil diproses.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memproses checkout: ' . $e->getMessage());
+            Log::error('Gagal memproses checkout', ['exception' => $e]);
+            return back()->with('error', 'Gagal memproses checkout. Silakan coba lagi.');
         }
     }
 

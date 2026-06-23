@@ -18,6 +18,7 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\CurrencyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HousekeepingController extends Controller
 {
@@ -163,7 +164,8 @@ class HousekeepingController extends Controller
             return redirect()->route('housekeeping.dashboard')->with('success', 'Hasil inspeksi kamar berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memproses hasil inspeksi: ' . $e->getMessage())->withInput();
+            Log::error('Gagal memproses hasil inspeksi', ['exception' => $e]);
+            return back()->with('error', 'Gagal memproses hasil inspeksi. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -216,7 +218,8 @@ class HousekeepingController extends Controller
             return back()->with('success', "Status Kamar {$room->room_number} berhasil diubah menjadi " . strtoupper($newStatus->value));
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memperbarui status kamar: ' . $e->getMessage());
+            Log::error('Gagal memperbarui status kamar', ['exception' => $e]);
+            return back()->with('error', 'Gagal memperbarui status kamar. Silakan coba lagi.');
         }
     }
 

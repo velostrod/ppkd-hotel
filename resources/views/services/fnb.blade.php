@@ -84,6 +84,12 @@
 <script>
     let cart = {};
 
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(str)));
+        return div.innerHTML;
+    }
+
     function addToCart(id, name, price) {
         if (cart[id]) {
             cart[id].qty += 1;
@@ -133,26 +139,26 @@
             div.className = 'flex flex-col border border-slate-100 p-3 rounded-lg bg-slate-50 relative';
             div.innerHTML = `
                 <div class="flex justify-between items-start">
-                    <span class="text-sm font-semibold text-slate-800">${item.name}</span>
+                    <span class="text-sm font-semibold text-slate-800">${escapeHtml(item.name)}</span>
                     <span class="text-sm font-bold text-slate-700">Rp ${formatIDR(subtotal)}</span>
                 </div>
                 <div class="flex items-center justify-between mt-2 gap-2">
                     <input type="text" 
                            placeholder="Catatan item (pedas, dll)" 
                            name="items[${index}][notes]"
-                           value="${item.notes}" 
+                           value="${escapeHtml(item.notes)}" 
                            oninput="updateItemNotes(${item.id}, this.value)" 
                            class="flex-1 min-w-0 px-2 py-1 border border-slate-200 rounded text-[11px] focus:outline-none bg-white" />
                     <div class="flex items-center space-x-2 shrink-0">
                         <button type="button" onclick="updateQty(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">-</button>
-                        <span class="text-sm font-semibold w-4 text-center">${item.qty}</span>
+                    <span class="text-sm font-semibold w-4 text-center">${escapeHtml(item.qty)}</span>
                         <button type="button" onclick="updateQty(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">+</button>
                     </div>
                 </div>
                 
                 <!-- Hidden fields for the form -->
-                <input type="hidden" name="items[${index}][food_item_id]" value="${item.id}" />
-                <input type="hidden" name="items[${index}][qty]" value="${item.qty}" />
+                <input type="hidden" name="items[${index}][food_item_id]" value="${escapeHtml(item.id)}" />
+                <input type="hidden" name="items[${index}][qty]" value="${escapeHtml(item.qty)}" />
             `;
             container.appendChild(div);
             index++;
