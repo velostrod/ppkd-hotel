@@ -16,7 +16,7 @@
         <div class="flex flex-row items-center justify-between mb-6 hidden {{ $c('flex') }}">
             <!-- Logo & PPKD text -->
             <div class="flex items-center space-x-2">
-                <img src="{{ asset('template/dist/img/logo.png') }}" class="w-8 h-8">
+                <img src="{{ asset('template/image/PPKDJP.png') }}" class="w-8 h-8 object-contain">
                 <strong class="capitalize text-teal-600 font-bold tracking-wider text-base sm:text-lg">PPKD</strong>
             </div>
 
