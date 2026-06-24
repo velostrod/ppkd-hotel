@@ -1,24 +1,27 @@
-# Hotel Management System — Hotel Kejora
+# Hotel Management System — PPKD Hotel
+
 ## Product Requirements Document (PRD) + Entity Relationship Design (ERD)
+
 ### Versi Final — Merged Document
 
 ---
 
 # 1. Ringkasan Project
 
-| Atribut | Detail |
-|---|---|
-| **Nama Project** | Hotel Management System — Hotel Kejora |
-| **Tujuan** | Membangun sistem manajemen hotel untuk mengelola operasional hotel secara terpusat, real-time, dan terdokumentasi |
-| **Platform** | Web Application (Internal Staff) |
-| **Tech Stack** | Laravel 13, MySQL, Tailwind CSS, Laravel Breeze |
+| Atribut          | Detail                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Nama Project** | Hotel Management System — PPKD Hotel                                                                              |
+| **Tujuan**       | Membangun sistem manajemen hotel untuk mengelola operasional hotel secara terpusat, real-time, dan terdokumentasi |
+| **Platform**     | Web Application (Internal Staff)                                                                                  |
+| **Tech Stack**   | Laravel 13, MySQL, Tailwind CSS, Laravel Breeze                                                                   |
 
 **Pengguna Sistem:**
+
 - Administrator
 - Front Office (FO)
 - Housekeeping (HK)
 - Food and Beverage (FnB)
-- Management Hotel *(read-only access ke laporan dan dashboard)*
+- Management Hotel _(read-only access ke laporan dan dashboard)_
 
 ---
 
@@ -68,14 +71,18 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 ## 4.1 Deskripsi Role
 
 ### 4.1.1 Administrator
+
 **Tugas utama:**
+
 - Akses semua menu sistem
 - Mengatur hak akses staff lainnya
 - Mengelola master data (kamar, harga, menu, charge, metode pembayaran)
 - Melihat semua laporan dan pengaturan sistem
 
 ### 4.1.2 Front Office (FO)
+
 **Tugas utama:**
+
 - Mengelola data tamu
 - Membuat dan mengelola reservasi
 - Melakukan check-in dan checkout
@@ -84,7 +91,9 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 - Mengelola pembayaran dan invoice
 
 ### 4.1.3 Housekeeping (HK)
+
 **Tugas utama:**
+
 - Menerima dan memproses request cleaning kamar
 - Melakukan room inspection saat checkout
 - Mengelola request laundry
@@ -92,7 +101,9 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 - Melihat riwayat cleaning dan inspeksi
 
 ### 4.1.4 Food and Beverage (FnB)
+
 **Tugas utama:**
+
 - Menerima daftar order dari FO
 - Memproses pesanan makanan dan minuman
 - Menandai pesanan selesai dan diantar ke kamar
@@ -103,6 +114,7 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 ## 4.2 Hak Akses per Role
 
 ### 4.2.1 Administrator
+
 - CRUD user / staff
 - CRUD role & permission
 - CRUD jenis kamar (room types)
@@ -115,6 +127,7 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 - Melihat semua laporan
 
 ### 4.2.2 Front Office
+
 - Data tamu (CRUD)
 - Reservasi (CRUD)
 - Check-in
@@ -128,6 +141,7 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 - Dashboard
 
 ### 4.2.3 Housekeeping
+
 - Cleaning request (lihat, terima, update status)
 - Room inspection (input hasil inspeksi)
 - Riwayat inspeksi kamar
@@ -137,6 +151,7 @@ Sistem ini dirancang untuk menyatukan seluruh proses tersebut dalam satu webapps
 - Dashboard housekeeping
 
 ### 4.2.4 Food and Beverage
+
 - Daftar pesanan masuk (view)
 - Proses pesanan (update status)
 - Riwayat pesanan
@@ -154,6 +169,7 @@ Sistem mendukung 4 metode pembayaran:
 4. **Credit Card**
 
 ### Kebutuhan Sistem untuk Pembayaran
+
 - Setiap transaksi dapat memiliki satu atau lebih record pembayaran
 - Mendukung pembayaran penuh (full payment)
 - Mendukung pembayaran sebagian (partial payment)
@@ -165,21 +181,24 @@ Sistem mendukung 4 metode pembayaran:
 - Menyimpan catatan transaksi
 
 ### Status Pembayaran
-| Status | Keterangan |
-|---|---|
-| `unpaid` | Belum ada pembayaran |
-| `partial` | Sudah dibayar sebagian |
-| `paid` | Lunas |
-| `refunded` | Dikembalikan |
+
+| Status     | Keterangan             |
+| ---------- | ---------------------- |
+| `unpaid`   | Belum ada pembayaran   |
+| `partial`  | Sudah dibayar sebagian |
+| `paid`     | Lunas                  |
+| `refunded` | Dikembalikan           |
 
 ---
 
 # 6. Jenis Kamar
 
 ### 6.1 Standard Room
+
 **Karakteristik:** Kamar ekonomis dan paling dasar.
 
 **Fasilitas:**
+
 - Tempat tidur single / queen
 - AC
 - TV
@@ -193,9 +212,11 @@ Sistem mendukung 4 metode pembayaran:
 ---
 
 ### 6.2 Deluxe Room
+
 **Karakteristik:** Lebih luas dari standard, lebih nyaman.
 
 **Fasilitas:**
+
 - Tempat tidur queen / king
 - AC
 - TV
@@ -210,9 +231,11 @@ Sistem mendukung 4 metode pembayaran:
 ---
 
 ### 6.3 Superior Room
+
 **Karakteristik:** Level di atas standard dengan kenyamanan lebih baik.
 
 **Fasilitas:**
+
 - Tempat tidur queen / king
 - AC
 - TV
@@ -226,9 +249,11 @@ Sistem mendukung 4 metode pembayaran:
 ---
 
 ### 6.4 Studio Room
+
 **Karakteristik:** Kamar modern dengan layout multifungsi.
 
 **Fasilitas:**
+
 - Area tidur dan area duduk menyatu
 - AC
 - TV
@@ -243,9 +268,11 @@ Sistem mendukung 4 metode pembayaran:
 ---
 
 ### 6.5 Suite Room
+
 **Karakteristik:** Kamar premium dengan ruang lebih luas.
 
 **Fasilitas:**
+
 - Ruang tidur dan ruang duduk terpisah
 - AC
 - TV
@@ -261,9 +288,11 @@ Sistem mendukung 4 metode pembayaran:
 ---
 
 ### 6.6 Connecting Room
+
 **Karakteristik:** Dua kamar yang terhubung dengan pintu penghubung.
 
 **Fasilitas:**
+
 - Dua kamar terpisah dengan pintu penghubung
 - AC
 - TV
@@ -278,14 +307,16 @@ Sistem mendukung 4 metode pembayaran:
 # 7. Aturan Kamar
 
 ### 7.1 Breakfast
+
 - Kamar dengan harga di atas **Rp600.000** mendapatkan breakfast included
 - Breakfast dapat dikonfigurasi dari sistem (per room type)
 - Pengaturan breakfast:
-  - Otomatis included berdasarkan harga kamar
-  - Optional add-on
-  - Berdasarkan room type / rate policy yang diset admin
+    - Otomatis included berdasarkan harga kamar
+    - Optional add-on
+    - Berdasarkan room type / rate policy yang diset admin
 
 ### 7.2 Extra Bed
+
 - Extra bed tersedia sebagai layanan tambahan
 - Dikenakan charge tambahan yang dikonfigurasi admin
 - Jumlah extra bed harus tercatat di booking dan invoice
@@ -296,18 +327,19 @@ Sistem mendukung 4 metode pembayaran:
 
 Sistem menggunakan 8 status kamar untuk mencerminkan kondisi aktual kamar secara real-time.
 
-| Status | Keterangan |
-|---|---|
-| `available` | Kamar siap dijual / siap digunakan tamu |
-| `reserved` | Kamar sudah dibooking, tamu belum check-in |
-| `occupied` | Kamar sedang ditempati tamu |
-| `dirty` | Kamar perlu dibersihkan (setelah checkout atau permintaan) |
-| `cleaning` | Housekeeping sedang membersihkan kamar |
-| `inspected` | Kamar sudah dibersihkan dan sudah dicek supervisor HK |
-| `maintenance` | Kamar sedang perbaikan, tidak bisa dijual |
-| `out_of_order` | Kamar tidak dapat digunakan sementara (kerusakan berat) |
+| Status         | Keterangan                                                 |
+| -------------- | ---------------------------------------------------------- |
+| `available`    | Kamar siap dijual / siap digunakan tamu                    |
+| `reserved`     | Kamar sudah dibooking, tamu belum check-in                 |
+| `occupied`     | Kamar sedang ditempati tamu                                |
+| `dirty`        | Kamar perlu dibersihkan (setelah checkout atau permintaan) |
+| `cleaning`     | Housekeeping sedang membersihkan kamar                     |
+| `inspected`    | Kamar sudah dibersihkan dan sudah dicek supervisor HK      |
+| `maintenance`  | Kamar sedang perbaikan, tidak bisa dijual                  |
+| `out_of_order` | Kamar tidak dapat digunakan sementara (kerusakan berat)    |
 
 **Alur umum status kamar:**
+
 ```
 available → reserved → occupied → dirty → cleaning → inspected → available
                                         → maintenance → available
@@ -327,6 +359,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 6. Status kamar berubah menjadi `reserved`
 
 **Hasil:**
+
 - Booking tersimpan dengan booking number
 - Status kamar terupdate ke `reserved`
 
@@ -340,6 +373,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 4. Status kamar berubah menjadi `occupied`
 
 **Hasil:**
+
 - Tamu dianggap aktif menginap
 - Record checkin tersimpan
 
@@ -347,7 +381,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 
 ## C. Stayover Cleaning
 
-*(Berlaku jika tamu menginap lebih dari 1 hari dan meminta kamar dibersihkan)*
+_(Berlaku jika tamu menginap lebih dari 1 hari dan meminta kamar dibersihkan)_
 
 1. Tamu menghubungi FO
 2. FO membuat cleaning request (tipe: `stayover_cleaning`)
@@ -359,6 +393,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 8. Riwayat cleaning tersimpan
 
 **Hasil:**
+
 - Request cleaning tercatat dan terdokumentasi
 - Status kamar sementara berubah ke `cleaning`, lalu kembali ke `occupied`
 
@@ -374,6 +409,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 6. Status request berubah menjadi `delivered`
 
 **Hasil:**
+
 - Request laundry tercatat dan terpantau
 - Charge laundry masuk ke invoice reservasi
 
@@ -390,6 +426,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 7. Status order berubah menjadi `delivered`
 
 **Hasil:**
+
 - Order tercatat dengan status real-time
 - Charge FnB masuk ke invoice reservasi
 
@@ -401,9 +438,9 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 2. FO melakukan proses checkout
 3. FO meminta HK melakukan inspeksi kamar
 4. HK mengecek kondisi kamar:
-   - Barang hilang
-   - Kerusakan fasilitas
-   - Kondisi umum kamar
+    - Barang hilang
+    - Kerusakan fasilitas
+    - Kondisi umum kamar
 5. Jika ada kerusakan → tambah charge ke invoice
 6. Status kamar berubah menjadi `dirty`
 7. HK melakukan cleaning kamar
@@ -412,6 +449,7 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 10. Status kamar berubah menjadi `inspected` → `available`
 
 **Hasil:**
+
 - Checkout tercatat
 - Semua charge tambahan masuk invoice
 - Invoice final dapat dicetak
@@ -423,23 +461,23 @@ available → reserved → occupied → dirty → cleaning → inspected → ava
 
 Sistem mendukung 5 jenis request housekeeping:
 
-| Tipe | Keterangan |
-|---|---|
-| `stayover_cleaning` | Pembersihan kamar saat tamu masih menginap |
-| `checkout_cleaning` | Pembersihan setelah tamu checkout |
-| `deep_cleaning` | Pembersihan menyeluruh dan mendetail |
-| `maintenance` | Permintaan perbaikan fasilitas kamar |
+| Tipe                | Keterangan                                    |
+| ------------------- | --------------------------------------------- |
+| `stayover_cleaning` | Pembersihan kamar saat tamu masih menginap    |
+| `checkout_cleaning` | Pembersihan setelah tamu checkout             |
+| `deep_cleaning`     | Pembersihan menyeluruh dan mendetail          |
+| `maintenance`       | Permintaan perbaikan fasilitas kamar          |
 | `linen_replacement` | Penggantian sprei, sarung bantal, atau handuk |
 
 ### Status Housekeeping Request
 
-| Status | Keterangan |
-|---|---|
-| `pending` | Request baru dibuat, belum diproses |
-| `assigned` | Request sudah diterima dan ditugaskan ke HK |
-| `in_progress` | HK sedang mengerjakan request |
-| `completed` | Request selesai dikerjakan |
-| `cancelled` | Request dibatalkan |
+| Status        | Keterangan                                  |
+| ------------- | ------------------------------------------- |
+| `pending`     | Request baru dibuat, belum diproses         |
+| `assigned`    | Request sudah diterima dan ditugaskan ke HK |
+| `in_progress` | HK sedang mengerjakan request               |
+| `completed`   | Request selesai dikerjakan                  |
+| `cancelled`   | Request dibatalkan                          |
 
 ---
 
@@ -448,6 +486,7 @@ Sistem mendukung 5 jenis request housekeeping:
 ### 11.1 Invoice
 
 Invoice harus:
+
 - Dapat ditampilkan di sistem
 - Dapat dicetak / printout langsung dari browser
 - Memuat rincian biaya lengkap (room charge, FnB, laundry, extra bed, kerusakan)
@@ -461,10 +500,12 @@ Invoice harus:
 Format: **`BK-ROOMNO-YYYYMMDD-XXXX`**
 
 Contoh:
+
 - `BK-101-20260616-0001`
 - `BK-205-20260617-0002`
 
 Keterangan:
+
 - `BK` = prefix booking
 - `ROOMNO` = nomor kamar yang dipesan
 - `YYYYMMDD` = tanggal booking dibuat
@@ -475,6 +516,7 @@ Keterangan:
 Format: **`INV-YYYYMMDD-XXXX`**
 
 Contoh:
+
 - `INV-20260616-0001`
 
 ### 11.4 Relasi Booking dan Invoice
@@ -488,6 +530,7 @@ Contoh:
 # 12. Menu Sistem per Role
 
 ## 12.1 Administrator
+
 - Dashboard
 - User Management
 - Role & Permission
@@ -500,6 +543,7 @@ Contoh:
 - Settings (pengaturan hotel)
 
 ## 12.2 Front Office
+
 - Dashboard
 - Data Tamu
 - Reservasi
@@ -513,6 +557,7 @@ Contoh:
 - Invoice
 
 ## 12.3 Housekeeping
+
 - Dashboard
 - Cleaning Request (terima & proses)
 - Room Inspection
@@ -522,6 +567,7 @@ Contoh:
 - Inspection History
 
 ## 12.4 Food and Beverage
+
 - Dashboard
 - Incoming Orders
 - Process Orders
@@ -532,7 +578,9 @@ Contoh:
 # 13. Menu Laporan
 
 ## 13.1 Laporan Reservasi
+
 Berisi:
+
 - Daftar booking beserta booking number
 - Tanggal reservasi
 - Nama tamu
@@ -541,13 +589,17 @@ Berisi:
 - Total biaya
 
 ## 13.2 Laporan Occupancy
+
 Berisi:
+
 - Tingkat aktivitas kamar (harian / periodik)
 - Jumlah kamar per status (available, reserved, occupied, dirty, maintenance)
 - Occupancy rate (%)
 
 ## 13.3 Laporan FnB
+
 Berisi:
+
 - Daftar order makanan dan minuman
 - Jumlah order per menu
 - Total pendapatan FnB
@@ -555,7 +607,9 @@ Berisi:
 - Status order (pending, preparing, delivered, cancelled)
 
 ## 13.4 Laporan Pendapatan
+
 Berisi:
+
 - Total revenue hotel (keseluruhan)
 - Revenue dari room charge
 - Revenue extra bed
@@ -564,6 +618,7 @@ Berisi:
 - Revenue charge kerusakan kamar
 
 Pendapatan per jenis kamar:
+
 - Standard
 - Deluxe
 - Superior
@@ -572,7 +627,9 @@ Pendapatan per jenis kamar:
 - Connecting
 
 ## 13.5 Laporan Summary
+
 Berisi ringkasan operasional hotel:
+
 - Total reservasi
 - Total check-in
 - Total checkout
@@ -592,22 +649,24 @@ Berisi ringkasan operasional hotel:
 ## 14.1 Authentication dan Akses
 
 ### `users`
+
 Data staff hotel untuk login sistem.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | Primary key |
-| name | varchar | Nama staff |
-| email | varchar unique | Email login |
-| password | varchar | Password (hashed) |
-| role_id | bigint FK | Relasi ke roles |
-| status | enum | active / inactive |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| Field      | Tipe           | Keterangan        |
+| ---------- | -------------- | ----------------- |
+| id         | bigint PK      | Primary key       |
+| name       | varchar        | Nama staff        |
+| email      | varchar unique | Email login       |
+| password   | varchar        | Password (hashed) |
+| role_id    | bigint FK      | Relasi ke roles   |
+| status     | enum           | active / inactive |
+| created_at | timestamp      |                   |
+| updated_at | timestamp      |                   |
 
 ---
 
 ### `roles`
+
 Daftar role yang tersedia.
 
 Nilai: `admin`, `front_office`, `housekeeping`, `fnb`
@@ -615,16 +674,18 @@ Nilai: `admin`, `front_office`, `housekeeping`, `fnb`
 ---
 
 ### `permissions`
+
 Daftar izin akses spesifik ke tiap fitur/menu.
 
 ---
 
 ### `role_permissions`
+
 Relasi many-to-many antara role dan permission.
 
-| Field | Tipe |
-|---|---|
-| role_id | bigint FK |
+| Field         | Tipe      |
+| ------------- | --------- |
+| role_id       | bigint FK |
 | permission_id | bigint FK |
 
 ---
@@ -632,58 +693,62 @@ Relasi many-to-many antara role dan permission.
 ## 14.2 Master Data
 
 ### `guests`
+
 Data tamu hotel.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| full_name | varchar | Nama lengkap |
-| phone | varchar | Nomor telepon |
-| email | varchar | Email tamu |
-| address | text | Alamat |
-| id_number | varchar | Nomor KTP / Paspor |
-| nationality | varchar | Kewarganegaraan |
-| gender | enum | male / female |
-| notes | text | Catatan khusus tamu |
+| Field       | Tipe      | Keterangan          |
+| ----------- | --------- | ------------------- |
+| id          | bigint PK |                     |
+| full_name   | varchar   | Nama lengkap        |
+| phone       | varchar   | Nomor telepon       |
+| email       | varchar   | Email tamu          |
+| address     | text      | Alamat              |
+| id_number   | varchar   | Nomor KTP / Paspor  |
+| nationality | varchar   | Kewarganegaraan     |
+| gender      | enum      | male / female       |
+| notes       | text      | Catatan khusus tamu |
 
 ---
 
 ### `room_types`
+
 Data tipe / kategori kamar.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| name | varchar | Nama tipe kamar |
-| description | text | Deskripsi |
-| base_price | decimal | Harga dasar per malam |
-| capacity | int | Kapasitas orang |
-| breakfast_included | boolean | Apakah breakfast included |
-| breakfast_price | decimal | Harga breakfast jika add-on |
-| extra_bed_allowed | boolean | Boleh extra bed atau tidak |
-| extra_bed_price | decimal | Harga extra bed |
-| is_active | boolean | Status aktif/nonaktif |
+| Field              | Tipe      | Keterangan                  |
+| ------------------ | --------- | --------------------------- |
+| id                 | bigint PK |                             |
+| name               | varchar   | Nama tipe kamar             |
+| description        | text      | Deskripsi                   |
+| base_price         | decimal   | Harga dasar per malam       |
+| capacity           | int       | Kapasitas orang             |
+| breakfast_included | boolean   | Apakah breakfast included   |
+| breakfast_price    | decimal   | Harga breakfast jika add-on |
+| extra_bed_allowed  | boolean   | Boleh extra bed atau tidak  |
+| extra_bed_price    | decimal   | Harga extra bed             |
+| is_active          | boolean   | Status aktif/nonaktif       |
 
 ---
 
 ### `rooms`
+
 Data kamar fisik.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| room_number | varchar | Nomor kamar (contoh: 101) |
-| room_type_id | bigint FK | Relasi ke room_types |
-| floor | int | Lantai |
-| status | enum | Status kamar (lihat section 8) |
-| notes | text | Catatan kamar |
-| is_active | boolean | Status aktif/nonaktif |
+| Field        | Tipe      | Keterangan                     |
+| ------------ | --------- | ------------------------------ |
+| id           | bigint PK |                                |
+| room_number  | varchar   | Nomor kamar (contoh: 101)      |
+| room_type_id | bigint FK | Relasi ke room_types           |
+| floor        | int       | Lantai                         |
+| status       | enum      | Status kamar (lihat section 8) |
+| notes        | text      | Catatan kamar                  |
+| is_active    | boolean   | Status aktif/nonaktif          |
 
 **Status enum:** `available`, `reserved`, `occupied`, `dirty`, `cleaning`, `inspected`, `maintenance`, `out_of_order`
 
 ---
 
 ### `food_categories`
+
 Kategori menu FnB.
 
 Contoh: `makanan`, `minuman`, `snack`, `dessert`
@@ -691,20 +756,22 @@ Contoh: `makanan`, `minuman`, `snack`, `dessert`
 ---
 
 ### `food_items`
+
 Daftar menu makanan dan minuman.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
+| Field            | Tipe      | Keterangan                |
+| ---------------- | --------- | ------------------------- |
+| id               | bigint PK |                           |
 | food_category_id | bigint FK | Relasi ke food_categories |
-| name | varchar | Nama menu |
-| price | decimal | Harga |
-| description | text | Deskripsi menu |
-| is_available | boolean | Tersedia atau tidak |
+| name             | varchar   | Nama menu                 |
+| price            | decimal   | Harga                     |
+| description      | text      | Deskripsi menu            |
+| is_available     | boolean   | Tersedia atau tidak       |
 
 ---
 
 ### `payment_methods`
+
 Metode pembayaran yang aktif.
 
 Contoh: `cash`, `transfer_bank`, `qris`, `credit_card`
@@ -712,6 +779,7 @@ Contoh: `cash`, `transfer_bank`, `qris`, `credit_card`
 ---
 
 ### `charge_types`
+
 Jenis charge tambahan di luar harga kamar.
 
 Contoh: `extra_bed`, `damage`, `laundry`, `minibar`, `late_checkout`, `fnb`
@@ -719,162 +787,171 @@ Contoh: `extra_bed`, `damage`, `laundry`, `minibar`, `late_checkout`, `fnb`
 ---
 
 ### `hotel_settings`
+
 Pengaturan umum sistem hotel.
 
-| Field | Keterangan |
-|---|---|
-| name | Nama hotel |
-| address | Alamat hotel |
-| phone | Nomor telepon hotel |
-| tax_rate | Persentase pajak (%) |
-| service_charge_rate | Persentase service charge (%) |
+| Field               | Keterangan                                   |
+| ------------------- | -------------------------------------------- |
+| name                | Nama hotel                                   |
+| address             | Alamat hotel                                 |
+| phone               | Nomor telepon hotel                          |
+| tax_rate            | Persentase pajak (%)                         |
+| service_charge_rate | Persentase service charge (%)                |
 | breakfast_threshold | Harga minimum kamar untuk breakfast included |
-| invoice_prefix | Prefix invoice number (default: INV) |
-| booking_prefix | Prefix booking number (default: BK) |
+| invoice_prefix      | Prefix invoice number (default: INV)         |
+| booking_prefix      | Prefix booking number (default: BK)          |
 
 ---
 
 ## 14.3 Transaksi Utama
 
 ### `reservations`
+
 Data reservasi tamu.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
+| Field            | Tipe           | Keterangan                            |
+| ---------------- | -------------- | ------------------------------------- |
+| id               | bigint PK      |                                       |
 | reservation_code | varchar unique | Booking number (BK-101-20260616-0001) |
-| guest_id | bigint FK | Relasi ke guests |
-| room_id | bigint FK | Relasi ke rooms |
-| checkin_date | date | Tanggal check-in |
-| checkout_date | date | Tanggal checkout |
-| adults | int | Jumlah tamu dewasa |
-| children | int | Jumlah anak-anak |
-| status | enum | Status reservasi |
-| subtotal | decimal | Total sebelum pajak |
-| discount | decimal | Diskon |
-| tax | decimal | Pajak |
-| service_charge | decimal | Service charge |
-| total | decimal | Total akhir |
-| created_by | bigint FK | User (FO) yang membuat |
-| created_at | timestamp | |
+| guest_id         | bigint FK      | Relasi ke guests                      |
+| room_id          | bigint FK      | Relasi ke rooms                       |
+| checkin_date     | date           | Tanggal check-in                      |
+| checkout_date    | date           | Tanggal checkout                      |
+| adults           | int            | Jumlah tamu dewasa                    |
+| children         | int            | Jumlah anak-anak                      |
+| status           | enum           | Status reservasi                      |
+| subtotal         | decimal        | Total sebelum pajak                   |
+| discount         | decimal        | Diskon                                |
+| tax              | decimal        | Pajak                                 |
+| service_charge   | decimal        | Service charge                        |
+| total            | decimal        | Total akhir                           |
+| created_by       | bigint FK      | User (FO) yang membuat                |
+| created_at       | timestamp      |                                       |
 
 **Status enum:** `pending`, `confirmed`, `checked_in`, `checked_out`, `cancelled`
 
 ---
 
 ### `reservation_details`
+
 Detail tambahan per reservasi.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| type | enum | `extra_bed`, `breakfast`, `special_request` |
-| qty | int | Jumlah |
-| price | decimal | Harga satuan |
-| notes | text | Catatan |
+| Field          | Tipe      | Keterangan                                  |
+| -------------- | --------- | ------------------------------------------- |
+| id             | bigint PK |                                             |
+| reservation_id | bigint FK |                                             |
+| type           | enum      | `extra_bed`, `breakfast`, `special_request` |
+| qty            | int       | Jumlah                                      |
+| price          | decimal   | Harga satuan                                |
+| notes          | text      | Catatan                                     |
 
 ---
 
 ### `checkins`
+
 Record proses check-in.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| checked_in_at | datetime | Waktu check-in aktual |
+| Field           | Tipe      | Keterangan              |
+| --------------- | --------- | ----------------------- |
+| id              | bigint PK |                         |
+| reservation_id  | bigint FK |                         |
+| checked_in_at   | datetime  | Waktu check-in aktual   |
 | front_office_id | bigint FK | Staff FO yang memproses |
-| notes | text | Catatan check-in |
+| notes           | text      | Catatan check-in        |
 
 ---
 
 ### `checkouts`
+
 Record proses checkout.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| checked_out_at | datetime | Waktu checkout aktual |
-| front_office_id | bigint FK | Staff FO yang memproses |
-| notes | text | Catatan checkout |
-| final_bill_total | decimal | Total tagihan final |
+| Field            | Tipe      | Keterangan              |
+| ---------------- | --------- | ----------------------- |
+| id               | bigint PK |                         |
+| reservation_id   | bigint FK |                         |
+| checked_out_at   | datetime  | Waktu checkout aktual   |
+| front_office_id  | bigint FK | Staff FO yang memproses |
+| notes            | text      | Catatan checkout        |
+| final_bill_total | decimal   | Total tagihan final     |
 
 ---
 
 ### `invoices`
+
 Data invoice per reservasi.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
+| Field          | Tipe           | Keterangan                        |
+| -------------- | -------------- | --------------------------------- |
+| id             | bigint PK      |                                   |
 | invoice_number | varchar unique | Nomor invoice (INV-YYYYMMDD-XXXX) |
-| reservation_id | bigint FK | |
-| invoice_date | date | Tanggal invoice |
-| subtotal | decimal | Total sebelum pajak dan charge |
-| tax | decimal | Pajak |
-| service_charge | decimal | Service charge |
-| discount | decimal | Diskon |
-| total_amount | decimal | Total akhir |
-| paid_amount | decimal | Total yang sudah dibayar |
-| balance_due | decimal | Sisa tagihan |
-| status | enum | Status pembayaran |
+| reservation_id | bigint FK      |                                   |
+| invoice_date   | date           | Tanggal invoice                   |
+| subtotal       | decimal        | Total sebelum pajak dan charge    |
+| tax            | decimal        | Pajak                             |
+| service_charge | decimal        | Service charge                    |
+| discount       | decimal        | Diskon                            |
+| total_amount   | decimal        | Total akhir                       |
+| paid_amount    | decimal        | Total yang sudah dibayar          |
+| balance_due    | decimal        | Sisa tagihan                      |
+| status         | enum           | Status pembayaran                 |
 
 **Status enum:** `unpaid`, `partial`, `paid`, `refunded`
 
 ---
 
 ### `payments`
+
 Record setiap pembayaran yang dilakukan.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| invoice_id | bigint FK | |
-| payment_method_id | bigint FK | |
-| payment_date | datetime | Waktu pembayaran |
-| amount | decimal | Nominal yang dibayar |
-| reference_number | varchar | Nomor referensi transfer / approval |
-| notes | text | Catatan |
-| status | enum | `success`, `pending`, `failed`, `refunded` |
-| created_by | bigint FK | Staff yang mencatat |
+| Field             | Tipe      | Keterangan                                 |
+| ----------------- | --------- | ------------------------------------------ |
+| id                | bigint PK |                                            |
+| invoice_id        | bigint FK |                                            |
+| payment_method_id | bigint FK |                                            |
+| payment_date      | datetime  | Waktu pembayaran                           |
+| amount            | decimal   | Nominal yang dibayar                       |
+| reference_number  | varchar   | Nomor referensi transfer / approval        |
+| notes             | text      | Catatan                                    |
+| status            | enum      | `success`, `pending`, `failed`, `refunded` |
+| created_by        | bigint FK | Staff yang mencatat                        |
 
 ---
 
 ### `charges`
+
 Catatan charge tambahan per reservasi.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| charge_type_id | bigint FK | |
-| amount | decimal | Nominal charge |
-| description | text | Deskripsi detail |
-| created_by | bigint FK | Staff yang mencatat |
-| created_at | timestamp | |
+| Field          | Tipe      | Keterangan          |
+| -------------- | --------- | ------------------- |
+| id             | bigint PK |                     |
+| reservation_id | bigint FK |                     |
+| charge_type_id | bigint FK |                     |
+| amount         | decimal   | Nominal charge      |
+| description    | text      | Deskripsi detail    |
+| created_by     | bigint FK | Staff yang mencatat |
+| created_at     | timestamp |                     |
 
 ---
 
 ## 14.4 Housekeeping
 
 ### `housekeeping_requests`
+
 Request cleaning dan perawatan kamar.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
+| Field          | Tipe      | Keterangan                                     |
+| -------------- | --------- | ---------------------------------------------- |
+| id             | bigint PK |                                                |
 | reservation_id | bigint FK | Reservasi terkait (nullable untuk maintenance) |
-| room_id | bigint FK | Kamar yang diminta |
-| requested_by | bigint FK | User (FO) yang membuat request |
-| assigned_to | bigint FK | Staff HK yang ditugaskan |
-| request_type | enum | Jenis request (lihat section 10) |
-| priority | enum | `low`, `normal`, `high`, `urgent` |
-| status | enum | Status request (lihat section 10) |
-| request_time | datetime | Waktu request dibuat |
-| completed_time | datetime | Waktu request selesai |
-| notes | text | Catatan tambahan |
+| room_id        | bigint FK | Kamar yang diminta                             |
+| requested_by   | bigint FK | User (FO) yang membuat request                 |
+| assigned_to    | bigint FK | Staff HK yang ditugaskan                       |
+| request_type   | enum      | Jenis request (lihat section 10)               |
+| priority       | enum      | `low`, `normal`, `high`, `urgent`              |
+| status         | enum      | Status request (lihat section 10)              |
+| request_time   | datetime  | Waktu request dibuat                           |
+| completed_time | datetime  | Waktu request selesai                          |
+| notes          | text      | Catatan tambahan                               |
 
 **request_type enum:** `stayover_cleaning`, `checkout_cleaning`, `deep_cleaning`, `maintenance`, `linen_replacement`
 
@@ -883,66 +960,70 @@ Request cleaning dan perawatan kamar.
 ---
 
 ### `housekeeping_request_items`
+
 Detail item yang perlu ditangani per request.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| housekeeping_request_id | bigint FK | |
-| item_name | varchar | Nama item / area |
-| description | text | Detail kondisi / instruksi |
-| is_done | boolean | Status penyelesaian item |
+| Field                   | Tipe      | Keterangan                 |
+| ----------------------- | --------- | -------------------------- |
+| id                      | bigint PK |                            |
+| housekeeping_request_id | bigint FK |                            |
+| item_name               | varchar   | Nama item / area           |
+| description             | text      | Detail kondisi / instruksi |
+| is_done                 | boolean   | Status penyelesaian item   |
 
 ---
 
 ### `room_inspections`
+
 Hasil inspeksi kamar saat checkout atau pemeriksaan berkala.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| room_id | bigint FK | |
-| reservation_id | bigint FK | |
-| inspected_by | bigint FK | Staff HK yang inspeksi |
-| inspection_date | datetime | Waktu inspeksi |
-| room_condition | enum | `good`, `needs_cleaning`, `damaged` |
-| damage_found | boolean | Ada kerusakan atau tidak |
-| damage_cost | decimal | Estimasi biaya kerusakan |
-| notes | text | Catatan inspeksi |
-| status | enum | `pending`, `completed` |
+| Field           | Tipe      | Keterangan                          |
+| --------------- | --------- | ----------------------------------- |
+| id              | bigint PK |                                     |
+| room_id         | bigint FK |                                     |
+| reservation_id  | bigint FK |                                     |
+| inspected_by    | bigint FK | Staff HK yang inspeksi              |
+| inspection_date | datetime  | Waktu inspeksi                      |
+| room_condition  | enum      | `good`, `needs_cleaning`, `damaged` |
+| damage_found    | boolean   | Ada kerusakan atau tidak            |
+| damage_cost     | decimal   | Estimasi biaya kerusakan            |
+| notes           | text      | Catatan inspeksi                    |
+| status          | enum      | `pending`, `completed`              |
 
 ---
 
 ### `room_inspection_items`
+
 Detail temuan per inspeksi kamar.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| room_inspection_id | bigint FK | |
-| item_name | varchar | Nama item yang diperiksa |
-| condition | enum | `good`, `damaged`, `missing` |
-| charge_amount | decimal | Biaya kerusakan / kehilangan |
-| notes | text | Keterangan detail |
+| Field              | Tipe      | Keterangan                   |
+| ------------------ | --------- | ---------------------------- |
+| id                 | bigint PK |                              |
+| room_inspection_id | bigint FK |                              |
+| item_name          | varchar   | Nama item yang diperiksa     |
+| condition          | enum      | `good`, `damaged`, `missing` |
+| charge_amount      | decimal   | Biaya kerusakan / kehilangan |
+| notes              | text      | Keterangan detail            |
 
 ---
 
 ## 14.5 Laundry
 
 ### `laundry_requests`
+
 Request laundry dari tamu.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| guest_id | bigint FK | |
-| requested_by | bigint FK | Staff FO yang input |
-| handled_by | bigint FK | Staff HK yang menangani |
-| request_date | datetime | Waktu request |
-| status | enum | Status request |
-| notes | text | Catatan (jenis pakaian, dsb) |
-| total_charge | decimal | Total biaya laundry |
+| Field          | Tipe      | Keterangan                   |
+| -------------- | --------- | ---------------------------- |
+| id             | bigint PK |                              |
+| reservation_id | bigint FK |                              |
+| guest_id       | bigint FK |                              |
+| requested_by   | bigint FK | Staff FO yang input          |
+| handled_by     | bigint FK | Staff HK yang menangani      |
+| request_date   | datetime  | Waktu request                |
+| status         | enum      | Status request               |
+| notes          | text      | Catatan (jenis pakaian, dsb) |
+| total_charge   | decimal   | Total biaya laundry          |
 
 **status enum:** `requested`, `picked_up`, `processing`, `ready`, `delivered`, `cancelled`
 
@@ -951,53 +1032,56 @@ Request laundry dari tamu.
 ## 14.6 Food and Beverage
 
 ### `fnb_orders`
+
 Order makanan dan minuman dari tamu.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| reservation_id | bigint FK | |
-| guest_id | bigint FK | |
-| requested_by | bigint FK | Staff FO yang input |
-| handled_by | bigint FK | Staff FnB yang proses |
-| order_time | datetime | Waktu order |
-| status | enum | Status order |
-| total_price | decimal | Total harga |
-| notes | text | Catatan khusus |
+| Field          | Tipe      | Keterangan            |
+| -------------- | --------- | --------------------- |
+| id             | bigint PK |                       |
+| reservation_id | bigint FK |                       |
+| guest_id       | bigint FK |                       |
+| requested_by   | bigint FK | Staff FO yang input   |
+| handled_by     | bigint FK | Staff FnB yang proses |
+| order_time     | datetime  | Waktu order           |
+| status         | enum      | Status order          |
+| total_price    | decimal   | Total harga           |
+| notes          | text      | Catatan khusus        |
 
 **status enum:** `pending`, `confirmed`, `preparing`, `delivered`, `cancelled`
 
 ---
 
 ### `fnb_order_items`
+
 Detail item per order FnB.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| fnb_order_id | bigint FK | |
-| food_item_id | bigint FK | |
-| qty | int | Jumlah |
-| price | decimal | Harga satuan saat order |
-| subtotal | decimal | Subtotal item |
-| notes | text | Catatan item (tidak pedas, dsb) |
+| Field        | Tipe      | Keterangan                      |
+| ------------ | --------- | ------------------------------- |
+| id           | bigint PK |                                 |
+| fnb_order_id | bigint FK |                                 |
+| food_item_id | bigint FK |                                 |
+| qty          | int       | Jumlah                          |
+| price        | decimal   | Harga satuan saat order         |
+| subtotal     | decimal   | Subtotal item                   |
+| notes        | text      | Catatan item (tidak pedas, dsb) |
 
 ---
 
 ## 14.7 Logging
 
 ### `activity_logs`
+
 Log seluruh aktivitas user untuk keperluan audit.
 
-| Field | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| user_id | bigint FK | User yang melakukan aksi |
-| action | varchar | Nama aksi (create, update, delete, dll) |
-| module | varchar | Modul / tabel yang diubah |
-| description | text | Detail aksi |
-| ip_address | varchar | IP address user |
-| created_at | timestamp | Waktu aksi |
+| Field       | Tipe      | Keterangan                              |
+| ----------- | --------- | --------------------------------------- |
+| id          | bigint PK |                                         |
+| user_id     | bigint FK | User yang melakukan aksi                |
+| action      | varchar   | Nama aksi (create, update, delete, dll) |
+| module      | varchar   | Modul / tabel yang diubah               |
+| description | text      | Detail aksi                             |
+| ip_address  | varchar   | IP address user                         |
+| created_at  | timestamp | Waktu aksi                              |
 
 ---
 
@@ -1055,19 +1139,20 @@ users              1..n  activity_logs
 
 # 16. Tech Stack
 
-| Komponen | Teknologi |
-|---|---|
-| **Backend** | Laravel 13 |
-| **Database** | MySQL |
-| **Frontend Styling** | Tailwind CSS |
-| **Authentication** | Laravel Breeze |
-| **Print Invoice** | Browser print / PDF via HTML |
+| Komponen             | Teknologi                    |
+| -------------------- | ---------------------------- |
+| **Backend**          | Laravel 13                   |
+| **Database**         | MySQL                        |
+| **Frontend Styling** | Tailwind CSS                 |
+| **Authentication**   | Laravel Breeze               |
+| **Print Invoice**    | Browser print / PDF via HTML |
 
 ---
 
 # 17. Catatan Implementasi
 
 ### Backend (Laravel)
+
 - Gunakan migration untuk semua tabel (urutan migration harus mengikuti relasi FK)
 - Gunakan enum atau constant class untuk semua nilai status
 - Definisikan relasi Eloquent secara jelas di tiap Model
@@ -1076,6 +1161,7 @@ users              1..n  activity_logs
 - Gunakan Database Transaction untuk operasi yang melibatkan banyak tabel (checkout, pembayaran)
 
 ### Frontend (Tailwind CSS)
+
 - Gunakan layout terpisah per role (admin layout, fo layout, hk layout, fnb layout)
 - Gunakan tabel data dengan pagination untuk daftar reservasi, order, dan laporan
 - Gunakan modal form untuk input yang tidak perlu halaman baru
@@ -1084,6 +1170,7 @@ users              1..n  activity_logs
 - Gunakan komponen invoice yang print-friendly (CSS print media query)
 
 ### Operasional / Business Rules
+
 - Status kamar **harus selalu sinkron** dengan kondisi aktual
 - Checkout tidak langsung membuat kamar `available` — harus melalui inspeksi dan cleaning
 - **Semua charge tambahan** (laundry, FnB, kerusakan, extra bed) harus masuk invoice sebelum checkout dikonfirmasi
@@ -1129,4 +1216,4 @@ Dengan struktur PRD dan ERD ini, sistem siap dikembangkan menggunakan Laravel 13
 
 ---
 
-*Dokumen ini merupakan hasil merge dari PRD_ERD v1 dan v2. Seluruh konten terbaik dari kedua versi telah digabungkan dan distrukturkan ulang.*
+_Dokumen ini merupakan hasil merge dari PRD_ERD v1 dan v2. Seluruh konten terbaik dari kedua versi telah digabungkan dan distrukturkan ulang._
