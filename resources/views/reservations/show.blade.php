@@ -35,9 +35,15 @@
         <!-- Quick Actions -->
         <div class="flex flex-wrap items-center gap-2">
             @if($reservation->status === 'confirmed')
-                <a href="{{ route('checkins.create', $reservation->id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-sm transition-colors uppercase">
-                    Check-In Tamu
-                </a>
+                @if(now()->startOfDay()->gte($reservation->checkin_date->startOfDay()))
+                    <a href="{{ route('checkins.create', $reservation->id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-sm transition-colors uppercase">
+                        Check-In Tamu
+                    </a>
+                @else
+                    <button disabled class="px-4 py-2 bg-blue-200 text-blue-400 rounded-xl text-sm font-bold cursor-not-allowed uppercase" title="Check-in tersedia mulai {{ $reservation->checkin_date->format('d/m/Y') }}">
+                        Check-In Tamu
+                    </button>
+                @endif
                 
                 <form action="{{ route('reservations.cancel', $reservation->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?')">
                     @csrf

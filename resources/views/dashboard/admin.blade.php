@@ -235,9 +235,15 @@
                                 Booking Kamar
                             </a>
                         @elseif($room->status === 'reserved' && $activeReservation)
-                            <a href="{{ route('checkins.create', $activeReservation->id) }}" class="block w-full py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold text-center rounded-lg shadow-sm transition-colors uppercase tracking-wider">
-                                Check-In
-                            </a>
+                            @if(now()->startOfDay()->gte($activeReservation->checkin_date->startOfDay()))
+                                <a href="{{ route('checkins.create', $activeReservation->id) }}" class="block w-full py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold text-center rounded-lg shadow-sm transition-colors uppercase tracking-wider">
+                                    Check-In
+                                </a>
+                            @else
+                                <button disabled class="w-full py-1.5 bg-blue-200 text-blue-400 text-xs font-semibold text-center rounded-lg uppercase tracking-wider cursor-not-allowed" title="Check-in mulai {{ $activeReservation->checkin_date->format('d/m/Y') }}">
+                                    Check-In ({{ $activeReservation->checkin_date->format('d/m') }})
+                                </button>
+                            @endif
                         @elseif($room->status === 'occupied' && $activeReservation)
                             <div class="grid grid-cols-2 gap-2">
                                 <a href="{{ route('reservations.show', $activeReservation->id) }}" class="py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold text-center rounded-lg transition-colors uppercase">

@@ -100,6 +100,16 @@
                 </div>
             </div>
 
+            <!-- Room Features Panel (shown after room is selected) -->
+            <div id="room_features_panel" class="hidden bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                <h4 class="text-sm font-bold text-blue-800 mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Fitur Kamar
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="room_features_list"></div>
+                <p id="room_features_desc" class="text-xs text-slate-500 mt-3 hidden"></p>
+            </div>
+
             <!-- Services & Addons Block -->
             <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                 <h4 class="text-sm font-bold text-slate-800 mb-4">Layanan & Add-on Tambahan</h4>
@@ -186,16 +196,10 @@
                     <!-- Nominal Deposit — hanya tampil saat tipe = deposit -->
                     <div id="deposit_amount_wrapper" class="md:col-span-2 hidden">
                         <label for="deposit_amount" class="block text-xs font-bold text-amber-800 uppercase tracking-wide mb-1.5">Nominal Deposit <span class="text-rose-500">*</span></label>
-                        <select id="deposit_amount" name="deposit_amount"
-                            class="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition">
-                            <option value="">-- Pilih Nominal --</option>
-                            @for($i = 1; $i <= 100; $i++)
-                                @php $val = $i * 100000; @endphp
-                                <option value="{{ $val }}" {{ old('deposit_amount') == $val ? 'selected' : '' }}>
-                                    Rp {{ number_format($val, 0, ',', '.') }}
-                                </option>
-                            @endfor
-                        </select>
+                        <input type="number" id="deposit_amount" name="deposit_amount"
+                            value="{{ old('deposit_amount') }}"
+                            min="1" step="1000" placeholder="Contoh: 500000"
+                            class="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition" />
                         <p class="text-xs text-amber-700 mt-1.5">Sisa tagihan akan diselesaikan saat check-in.</p>
                     </div>
                 </div>
@@ -278,7 +282,83 @@
 </div>
 
 <script>
+const ROOM_DATA = {
+    @foreach($rooms as $room)
+    @if($room->is_available_in_range)
+    "{{ $room->id }}": {
+        number: "{{ $room->room_number }}",
+        type: "{{ $room->roomType->name }}",
+        price: {{ $room->roomType->base_price }},
+        capacity: {{ $room->roomType->capacity }},
+        breakfast_included: {{ $room->roomType->breakfast_included ? 'true' : 'false' }},
+        breakfast_price: {{ $room->roomType->breakfast_price ?? 0 }},
+        extra_bed_allowed: {{ $room->roomType->extra_bed_allowed ? 'true' : 'false' }},
+        extra_bed_price: {{ $room->roomType->extra_bed_price ?? 0 }},
+        description: @json($room->roomType->description ?? ''),
+    },
+    @endif
+    @endforeach
+};
+
 document.addEventListener('DOMContentLoaded', function() {
+    // ── Room features panel ───────────────────────────────────
+    const roomSelect      = document.getElementById('room_id');
+    const featuresPanel   = document.getElementById('room_features_panel');
+    const featuresList    = document.getElementById('room_features_list');
+    const featuresDesc    = document.getElementById('room_features_desc');
+
+    function formatRupiah(n) {
+        return 'Rp ' + Number(n).toLocaleString('id-ID');
+    }
+
+    function featureItem(icon, label, highlight) {
+        return `<div class="flex items-center gap-2 text-sm ${highlight ? 'text-blue-700 font-semibold' : 'text-slate-600'}">
+            <span class="text-base leading-none">${icon}</span>
+            <span>${label}</span>
+        </div>`;
+    }
+
+    function updateRoomFeatures() {
+        const id = roomSelect.value;
+        const room = ROOM_DATA[id];
+        if (!room) {
+            featuresPanel.classList.add('hidden');
+            return;
+        }
+
+        const items = [];
+        items.push(featureItem('🏨', `Tipe: ${room.type}`, false));
+        items.push(featureItem('👥', `Kapasitas: ${room.capacity} Orang`, false));
+        items.push(featureItem('💰', `Harga: ${formatRupiah(room.price)} / malam`, false));
+
+        if (room.breakfast_included) {
+            items.push(featureItem('☕', 'Sarapan sudah termasuk', true));
+        } else if (room.breakfast_price > 0) {
+            items.push(featureItem('☕', `Sarapan tersedia (+${formatRupiah(room.breakfast_price)}/orang)`, false));
+        }
+
+        if (room.extra_bed_allowed) {
+            const label = room.extra_bed_price > 0
+                ? `Extra Bed tersedia (+${formatRupiah(room.extra_bed_price)}/malam)`
+                : 'Extra Bed tersedia';
+            items.push(featureItem('🛏️', label, false));
+        }
+
+        featuresList.innerHTML = items.join('');
+
+        if (room.description) {
+            featuresDesc.textContent = room.description;
+            featuresDesc.classList.remove('hidden');
+        } else {
+            featuresDesc.classList.add('hidden');
+        }
+
+        featuresPanel.classList.remove('hidden');
+    }
+
+    roomSelect.addEventListener('change', updateRoomFeatures);
+    updateRoomFeatures(); // run on load in case of old() value
+
     // ── Deposit toggle ────────────────────────────────────────
     const paymentTypeSelect = document.getElementById('payment_type');
     const depositWrapper    = document.getElementById('deposit_amount_wrapper');

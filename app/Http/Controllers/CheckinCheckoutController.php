@@ -34,6 +34,10 @@ class CheckinCheckoutController extends Controller
             return redirect()->route('reservations.show', $reservation->id)->with('error', 'Reservasi harus berstatus confirmed untuk check-in.');
         }
 
+        if (now()->startOfDay()->lt($reservation->checkin_date->startOfDay())) {
+            return redirect()->route('reservations.show', $reservation->id)->with('error', 'Check-in belum bisa dilakukan sebelum tanggal ' . $reservation->checkin_date->format('d/m/Y') . '.');
+        }
+
         $reservation->load(['guest', 'room.roomType', 'invoice.payments']);
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
         $settings = HotelSetting::first();
@@ -53,6 +57,10 @@ class CheckinCheckoutController extends Controller
     {
         if ($reservation->status !== ReservationStatus::Confirmed->value) {
             return redirect()->route('reservations.show', $reservation->id)->with('error', 'Reservasi harus berstatus confirmed.');
+        }
+
+        if (now()->startOfDay()->lt($reservation->checkin_date->startOfDay())) {
+            return redirect()->route('reservations.show', $reservation->id)->with('error', 'Check-in belum bisa dilakukan sebelum tanggal ' . $reservation->checkin_date->format('d/m/Y') . '.');
         }
 
         $validated = $request->validated();

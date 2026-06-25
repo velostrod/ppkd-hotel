@@ -89,7 +89,11 @@
                         <td class="py-4 px-4 text-right space-x-2">
                             <a href="{{ route('reservations.show', $res->id) }}" class="text-slate-800 hover:underline text-xs font-bold">Detail</a>
                             @if($res->status === 'confirmed')
-                                <a href="{{ route('checkins.create', $res->id) }}" class="text-blue-600 hover:underline text-xs font-bold">Check-In</a>
+                                @if(now()->startOfDay()->gte($res->checkin_date->startOfDay()))
+                                    <a href="{{ route('checkins.create', $res->id) }}" class="text-blue-600 hover:underline text-xs font-bold">Check-In</a>
+                                @else
+                                    <span class="text-slate-400 text-xs font-bold cursor-not-allowed" title="Check-in tersedia mulai {{ $res->checkin_date->format('d/m/Y') }}">Check-In</span>
+                                @endif
                             @elseif($res->status === 'checked_in')
                                 <a href="{{ route('checkouts.invoice', $res->id) }}" class="text-rose-500 hover:underline text-xs font-bold">Checkout</a>
                             @endif
