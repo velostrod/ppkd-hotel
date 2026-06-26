@@ -7,7 +7,7 @@
     <!-- Menu Catalog (Left 7 Cols) -->
     <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
         <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3 font-semibold">Katalog Menu Makanan & Minuman</h3>
-        
+
         <!-- Tab Categories -->
         <div class="space-y-8">
             @foreach($foodItems->groupBy('foodCategory.name') as $category => $items)
@@ -21,8 +21,8 @@
                                     <span class="text-xs text-slate-400 block mt-1 leading-snug">{{ $item->description }}</span>
                                     <span class="font-bold text-amber-600 text-sm block mt-2">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
                                 </div>
-                                <button type="button" 
-                                        onclick="addToCart({{ $item->id }}, '{{ $item->name }}', {{ $item->price }})" 
+                                <button type="button"
+                                        onclick="addToCart({{ $item->id }}, '{{ $item->name }}', {{ $item->price }})"
                                         class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-transform hover:scale-105 uppercase">
                                     Tambah
                                 </button>
@@ -39,10 +39,10 @@
         <!-- Input Form -->
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
             <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Keranjang Belanja Tamu</h3>
-            
+
             <form method="POST" action="{{ route('services.fnb.store') }}" class="space-y-6" id="fnb-order-form">
                 @csrf
-                
+
                 <div>
                     <label for="reservation_id" class="block text-sm font-semibold text-slate-700 mb-1.5">Kamar Tamu Aktif</label>
                     <select id="reservation_id" name="reservation_id" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-amber-500">
@@ -61,7 +61,7 @@
                     <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto pr-2">
                         <p class="text-sm text-slate-400 italic text-center py-4" id="empty-cart-text">Belum ada item ditambahkan.</p>
                     </div>
-                    
+
                     <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
                         <span class="text-sm font-bold text-slate-700">Total Harga:</span>
                         <span class="text-base font-bold text-amber-600" id="cart-total-display">Rp 0</span>
@@ -119,7 +119,7 @@
     function renderCart() {
         const container = document.getElementById('cart-items');
         container.innerHTML = '';
-        
+
         let total = 0;
         let index = 0;
 
@@ -143,11 +143,11 @@
                     <span class="text-sm font-bold text-slate-700">Rp ${formatIDR(subtotal)}</span>
                 </div>
                 <div class="flex items-center justify-between mt-2 gap-2">
-                    <input type="text" 
-                           placeholder="Catatan item (pedas, dll)" 
+                    <input type="text"
+                           placeholder="Catatan item (pedas, dll)"
                            name="items[${index}][notes]"
-                           value="${escapeHtml(item.notes)}" 
-                           oninput="updateItemNotes(${item.id}, this.value)" 
+                           value="${escapeHtml(item.notes)}"
+                           oninput="updateItemNotes(${item.id}, this.value)"
                            class="flex-1 min-w-0 px-2 py-1 border border-slate-200 rounded text-[11px] focus:outline-none bg-white" />
                     <div class="flex items-center space-x-2 shrink-0">
                         <button type="button" onclick="updateQty(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">-</button>
@@ -155,7 +155,7 @@
                         <button type="button" onclick="updateQty(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs">+</button>
                     </div>
                 </div>
-                
+
                 <!-- Hidden fields for the form -->
                 <input type="hidden" name="items[${index}][food_item_id]" value="${escapeHtml(item.id)}" />
                 <input type="hidden" name="items[${index}][qty]" value="${escapeHtml(item.qty)}" />
